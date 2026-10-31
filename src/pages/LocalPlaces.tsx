@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowRight, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -10,8 +10,7 @@ import Pagination, {
   PLACES_PAGE_SIZE,
 } from "../components/Pagination";
 
-import { products, type Product } from "../data/products";
-import { useGetProductsQuery } from "../store/api/apiSlice";
+import { useGetPlacesQuery } from "../store/api/apiSlice";
 
 const placeImages = import.meta.glob("../assets/images/places/*.jpg", {
   eager: true,
@@ -27,48 +26,21 @@ function placeImage(origin: string) {
   );
 }
 
-function placeName(origin: string) {
-  return origin.split(",")[0].trim();
-}
-
-function soldCount(sold: string) {
-  const value = Number.parseInt(sold.replace(/[^\d]/g, ""), 10);
-  return Number.isNaN(value) ? 0 : value;
-}
-
 function LocalPlaces() {
   const [page, setPage] = useState(1);
-  const { data: serverProducts } = useGetProductsQuery();
-  const allProducts = (
-    serverProducts && serverProducts.length > 0
-      ? (serverProducts as unknown as Product[])
-      : products
-  );
+  const { data: serverPlaces } = useGetPlacesQuery();
 
-  const places = allProducts.reduce<
-    {
-      origin: string;
-      name: string;
-      products: number;
-      image: string;
-    }[]
-  >((list, product) => {
-    const existing = list.find((place) => place.origin === product.origin);
-
-    if (existing) {
-      existing.products += soldCount(product.sold);
-      return list;
+  const places = useMemo(() => {
+    if (serverPlaces && serverPlaces.length > 0) {
+      return serverPlaces.map((p: any) => ({
+        origin: p.origin,
+        name: p.name,
+        products: p.totalSold || p.productsCount || 0,
+        image: placeImage(p.origin),
+      }));
     }
-
-    list.push({
-      origin: product.origin,
-      name: placeName(product.origin),
-      products: soldCount(product.sold),
-      image: placeImage(product.origin),
-    });
-
-    return list;
-  }, []);
+    return [];
+  }, [serverPlaces]);
 
   const paged = paginateItems(places, page, PLACES_PAGE_SIZE);
 

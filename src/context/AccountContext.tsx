@@ -116,7 +116,7 @@ function asRole(role: string | undefined): AccountRole {
   return "customer";
 }
 
-function userFromSession(payload: SessionPayload): MockUser {
+function userFromSession(payload: SessionPayload, prevUser?: MockUser): MockUser {
   const account = payload.user;
   return {
     firstName: account.firstName,
@@ -125,12 +125,12 @@ function userFromSession(payload: SessionPayload): MockUser {
     phone: account.phone,
     location: account.location,
     verified: account.verified,
-    rewardPoints: payload.points,
+    rewardPoints: payload.points ?? prevUser?.rewardPoints ?? 0,
     referralCode: account.referralCode,
-    photo: account.photo || (account.vendor && (account.vendor as { photo?: string }).photo) || "",
+    photo: account.photo || (account.vendor && (account.vendor as { photo?: string }).photo) || prevUser?.photo || "",
     password: "",
     role: asRole(account.role),
-    vendor: account.vendor as VendorProfile | undefined,
+    vendor: (account.vendor as VendorProfile | undefined) || prevUser?.vendor,
   };
 }
 
@@ -412,7 +412,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         });
         try {
           const payload = await api.updateProfile(next);
-          setUser(userFromSession(payload));
+          setUser((prev) => userFromSession(payload, prev));
         } catch (err) {
           console.warn("Could not sync profile update to server", err);
         }
@@ -429,7 +429,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         });
         try {
           const payload = await api.updateProfile({ photo });
-          setUser(userFromSession(payload));
+          setUser((prev) => userFromSession(payload, prev));
         } catch (err) {
           console.warn("Could not sync photo to server", err);
         }

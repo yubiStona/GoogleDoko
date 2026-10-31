@@ -1,13 +1,12 @@
 import ProductCard from "./product/ProductCard";
-import { products, type Product } from "../data/products";
+import { type Product } from "../data/products";
 import { Link } from "react-router-dom";
-import { useGetProductsQuery } from "../store/api/apiSlice";
+import { useGetPopularProductsQuery } from "../store/api/apiSlice";
+import { ProductSkeletonGrid } from "./product/ProductSkeleton";
 
 function PopularProducts() {
-  const { data: serverProducts } = useGetProductsQuery();
-  const displayProducts = (serverProducts && serverProducts.length > 0
-    ? (serverProducts as unknown as Product[])
-    : products);
+  const { data: serverProducts, isLoading } = useGetPopularProductsQuery(4);
+  const displayProducts = (serverProducts || []) as unknown as Product[];
 
   return (
     <section className="popular-products-section">
@@ -19,12 +18,16 @@ function PopularProducts() {
       </div>
 
       <div className="products-grid">
-        {displayProducts.slice(0, 4).map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-          />
-        ))}
+        {isLoading ? (
+          <ProductSkeletonGrid count={4} />
+        ) : (
+          displayProducts.slice(0, 4).map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+            />
+          ))
+        )}
       </div>
     </section>
   );

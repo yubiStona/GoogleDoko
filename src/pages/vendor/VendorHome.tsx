@@ -113,7 +113,10 @@ function greeting() {
 
 function VendorHome() {
   const { user } = useAccount();
-  const farm = user.vendor?.businessName || "Himalayan Fresh Farm";
+  const vendorName =
+    `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+    user.vendor?.businessName ||
+    "Vendor";
   const today = new Date().toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
@@ -127,7 +130,7 @@ function VendorHome() {
       <div className="vd-welcome">
         <div>
           <h1>
-            {greeting()}, {farm}! <span aria-hidden="true">👋</span>
+            {greeting()}, {vendorName}! <span aria-hidden="true">👋</span>
           </h1>
           <p>Here is your Nepalese fresh market snapshot for today.</p>
         </div>

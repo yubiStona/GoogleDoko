@@ -65,7 +65,10 @@ export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: async (args, api, extraOptions) => {
     const rawBaseQuery = fetchBaseQuery({
-      baseUrl: "/api",
+      baseUrl:
+        import.meta.env.MODE === "test"
+          ? "http://localhost:4000/api"
+          : "/api",
       prepareHeaders: (headers) => {
         const token =
           localStorage.getItem("googledoko-token") ||
@@ -100,6 +103,33 @@ export const apiSlice = createApi({
     getProducts: builder.query<Product[], void>({
       query: () => "/products",
       providesTags: ["Products"],
+    }),
+    getPopularProducts: builder.query<Product[], number | void>({
+      query: (limit = 8) => `/products/popular?limit=${limit}`,
+      providesTags: ["Products"],
+    }),
+    getFeaturedProducts: builder.query<Product[], number | void>({
+      query: (limit = 8) => `/products/featured?limit=${limit}`,
+      providesTags: ["Products"],
+    }),
+    getLatestProducts: builder.query<Product[], number | void>({
+      query: (limit = 8) => `/products/latest?limit=${limit}`,
+      providesTags: ["Products"],
+    }),
+    getCategories: builder.query<any[], void>({
+      query: () => "/categories",
+      providesTags: ["Products"],
+    }),
+    getPlaces: builder.query<any[], void>({
+      query: () => "/places",
+      providesTags: ["Products"],
+    }),
+    getOffers: builder.query<any, void>({
+      query: () => "/offers",
+    }),
+    getVendorOrders: builder.query<Order[], void>({
+      query: () => "/vendor/orders",
+      providesTags: ["Orders"],
     }),
     getProductById: builder.query<Product, string>({
       query: (id) => `/products/${id}`,
@@ -290,6 +320,13 @@ export const apiSlice = createApi({
 
 export const {
   useGetProductsQuery,
+  useGetPopularProductsQuery,
+  useGetFeaturedProductsQuery,
+  useGetLatestProductsQuery,
+  useGetCategoriesQuery,
+  useGetPlacesQuery,
+  useGetOffersQuery,
+  useGetVendorOrdersQuery,
   useGetProductByIdQuery,
   useGetMeQuery,
   useLoginMutation,

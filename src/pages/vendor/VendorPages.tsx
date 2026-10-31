@@ -27,6 +27,7 @@ import {
 import { useAccount } from "../../context/AccountContext";
 import { DEMO_PASSWORD, type VendorStoreSettings } from "../../data/authOptions";
 import { api } from "../../api/client";
+import { useGetVendorOrdersQuery } from "../../store/api/apiSlice";
 import bannerImage from "../../assets/images/vendor/storefront-banner.jpg";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -670,7 +671,27 @@ const incomingOrders = [
 
 export function VendorOrders() {
   const [tab, setTab] = useState<(typeof vendorOrderTabs)[number]["id"]>("incoming");
-  const [orders, setOrders] = useState(incomingOrders);
+  const { data: serverVendorOrders } = useGetVendorOrdersQuery();
+  const [localOrders, setLocalOrders] = useState<any[] | null>(null);
+
+  const orders = useMemo(() => {
+    if (localOrders !== null) return localOrders;
+    if (serverVendorOrders && serverVendorOrders.length > 0) {
+      return serverVendorOrders.map((o: any) => ({
+        id: o.id,
+        time: o.date || new Date(o.createdAt || Date.now()).toLocaleDateString(),
+        customer: o.recipientName || "Customer",
+        phone: o.recipientPhone || "98XXXXXXXX",
+        address: o.deliveryAddress || "Kathmandu",
+        items: Array.isArray(o.items)
+          ? o.items.map((it: any) => `${it.name} x ${it.quantity}`).join(", ")
+          : "Fresh Harvest Produce",
+        total: Number(o.total || 0).toLocaleString(),
+        payment: `${o.paymentMethod || "COD"} (${o.paymentStatus || "Pending"})`,
+      }));
+    }
+    return incomingOrders;
+  }, [serverVendorOrders, localOrders]);
 
   return (
     <div className="vd-orders">
@@ -741,8 +762,8 @@ export function VendorOrders() {
                       type="button"
                       className="vd-decline"
                       onClick={() =>
-                        setOrders((current) =>
-                          current.filter((item) => item.id !== order.id),
+                        setLocalOrders((current) =>
+                          (current || orders).filter((item) => item.id !== order.id),
                         )
                       }
                     >

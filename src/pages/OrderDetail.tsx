@@ -105,14 +105,19 @@ function OrderDetail() {
   const [order, setOrder] = useState<NormalizedOrder | null>(
     localOrder ? normalizeOrder(localOrder) : null
   );
+  const [searching, setSearching] = useState(!localOrder);
 
   useEffect(() => {
     if (!order && id && getToken()) {
+      setSearching(true);
       api.getOrderById(id)
         .then((res) => {
           if (res) setOrder(normalizeOrder(res));
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setSearching(false));
+    } else if (!order) {
+      setSearching(false);
     }
   }, [order, id]);
 
@@ -125,8 +130,17 @@ function OrderDetail() {
         <Navbar />
         <main className="order-detail-page">
           <div className="order-detail-missing">
-            <h1>Looking up order #{activeId}...</h1>
-            <p>If you just placed this order, it will appear here shortly.</p>
+            {searching ? (
+              <>
+                <h1>Looking up order #{activeId}...</h1>
+                <p>If you just placed this order, it will appear here shortly.</p>
+              </>
+            ) : (
+              <>
+                <h1>Order #{activeId} not found</h1>
+                <p>We could not find this order in your account or order history.</p>
+              </>
+            )}
             <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginTop: "1rem" }}>
               <Link to="/orders" className="od-action-primary" style={{ textDecoration: "none" }}>
                 Back to orders

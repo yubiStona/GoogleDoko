@@ -19,7 +19,8 @@ type ForgotFormData = yup.InferType<typeof forgotSchema>;
 
 function ForgotPassword() {
   const [busy, setBusy] = useState(false);
-  const [delivery, setDelivery] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [serverError, setServerError] = useState("");
 
@@ -40,9 +41,13 @@ function ForgotPassword() {
     if (busy) return;
     setBusy(true);
     setServerError("");
+    const targetEmail = data.email.trim();
     try {
-      const result = await api.forgotPassword(data.email.trim());
-      setDelivery(result.delivery);
+      const result = await api.forgotPassword(targetEmail);
+      setSubmittedEmail(targetEmail);
+      if (result.resetToken) {
+        setResetToken(result.resetToken);
+      }
       setSent(true);
     } catch (err) {
       setServerError(err instanceof Error ? err.message : "Could not send reset link");
@@ -56,13 +61,24 @@ function ForgotPassword() {
       <div className="auth-card">
         {sent ? (
           <>
-            <h1>Check your email</h1>
+            <h1>Reset Token Ready</h1>
             <p className="auth-lead">
-              {delivery === "development"
-                ? "Development mode: if the account exists, its reset link is available in the API terminal. Email delivery has not been configured."
-                : "If this email is registered, a password reset link has been sent."}
+              If an account is associated with <strong>{submittedEmail}</strong>, your verification code is ready.
             </p>
-            <Link to="/login" className="auth-btn">
+            {resetToken ? (
+              <div style={{ background: "#f3f4f6", padding: "12px 16px", borderRadius: "8px", margin: "1rem 0", textAlign: "center" }}>
+                <span style={{ fontSize: "13px", color: "#6b7280", display: "block" }}>Your Reset Verification Code:</span>
+                <strong style={{ fontSize: "20px", letterSpacing: "2px", color: "#111827" }}>{resetToken}</strong>
+              </div>
+            ) : null}
+            <Link
+              to={`/reset-password?email=${encodeURIComponent(submittedEmail)}${resetToken ? `&token=${encodeURIComponent(resetToken)}` : ""}`}
+              className="auth-btn"
+              style={{ textAlign: "center", textDecoration: "none", marginBottom: "0.75rem" }}
+            >
+              Continue to Reset Password
+            </Link>
+            <Link to="/login" className="auth-back" style={{ textAlign: "center", display: "block" }}>
               Back to Login
             </Link>
           </>

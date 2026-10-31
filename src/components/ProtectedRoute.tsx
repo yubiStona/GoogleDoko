@@ -45,7 +45,18 @@ function ProtectedRoute({
   children: ReactNode;
   intent?: AuthIntent;
 }) {
-  const { isLoggedIn } = useAccount();
+  const { isLoggedIn, loadingSession } = useAccount();
+
+  if (loadingSession) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+          <div style={{ width: "32px", height: "32px", border: "3px solid #e5e7eb", borderTopColor: "#16a34a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <p style={{ color: "#6b7280", fontSize: "14px" }}>Verifying session…</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return <AuthGate intent={intent} />;

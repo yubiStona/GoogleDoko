@@ -7,7 +7,7 @@ import * as yup from "yup";
 import AuthShell from "../components/auth/AuthShell";
 import AuthPasswordField from "../components/auth/AuthPasswordField";
 import { postLoginPath, useAccount } from "../context/AccountContext";
-import { DEMO_PASSWORD, DEMO_VENDOR_EMAIL, type AccountRole } from "../data/authOptions";
+import { type AccountRole } from "../data/authOptions";
 import loginProduceImage from "../assets/images/login-produce.jpg";
 
 const loginSchema = yup.object({
@@ -188,45 +188,6 @@ function Login() {
             <button type="submit" className="auth-btn" disabled={loading}>
               {loading ? "Logging in..." : role === "vendor" ? "Sign In as Vendor" : "Login"}
             </button>
-
-            {role === "vendor" && (
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  background: "#f0fdf4",
-                  border: "1px dashed #86efac",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  fontSize: 12,
-                  color: "#166534",
-                }}
-              >
-                <span>Demo Vendor: <strong>vendor@googledoko.com</strong></span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setValue("identifier", DEMO_VENDOR_EMAIL, { shouldValidate: true });
-                    setValue("password", DEMO_PASSWORD, { shouldValidate: true });
-                    if (serverError) setServerError("");
-                  }}
-                  style={{
-                    background: "#16a34a",
-                    border: "none",
-                    borderRadius: 6,
-                    padding: "4px 10px",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "#ffffff",
-                    cursor: "pointer",
-                  }}
-                >
-                  Autofill
-                </button>
-              </div>
-            )}
           </form>
 
           <p className="auth-switch">
