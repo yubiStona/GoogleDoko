@@ -10,27 +10,30 @@ interface CategoryCardProps {
   name: string;
   description: string;
   image: string;
-  icon: "fruits" | "spices" | "vegetables" | "others";
-  theme: "orange" | "green" | "red" | "teal";
+  icon?: string;
+  theme?: string;
   to: string;
 }
 
-const icons = {
+const icons: Record<string, typeof Apple> = {
   fruits: Apple,
   spices: Leaf,
   vegetables: Carrot,
   others: ShoppingBag,
+  dairy: ShoppingBag,
+  grains: ShoppingBag,
+  honey: ShoppingBag,
 };
 
 function CategoryCard({
   name,
   description,
   image,
-  icon,
-  theme,
+  icon = "others",
+  theme = "teal",
   to,
 }: CategoryCardProps) {
-  const Icon = icons[icon];
+  const Icon = icons[icon] || ShoppingBag;
 
   return (
     <Link to={to} className={`category-card ${theme}`}>

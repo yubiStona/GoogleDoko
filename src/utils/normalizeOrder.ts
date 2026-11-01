@@ -34,11 +34,21 @@ export interface NormalizedOrder {
 export function normalizeOrder(raw: any): NormalizedOrder | null {
   if (!raw) return null;
 
+  let parsedFromJson: any[] = [];
+  if (typeof raw.itemsJson === "string") {
+    try {
+      const parsed = JSON.parse(raw.itemsJson);
+      if (Array.isArray(parsed)) parsedFromJson = parsed;
+    } catch {
+      parsedFromJson = [];
+    }
+  }
+
   const rawList = Array.isArray(raw.products)
     ? raw.products
     : Array.isArray(raw.items)
       ? raw.items
-      : [];
+      : parsedFromJson;
 
   const products: NormalizedOrderItem[] = rawList.map((item: any) => ({
     productId: String(item.productId || item.id || "1"),

@@ -22,11 +22,23 @@ export function clearToken() {
   sessionStorage.removeItem(TOKEN_KEY);
 }
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:4000";
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "";
+
+export class ApiError extends Error {
+  status?: number;
+  data?: unknown;
+  constructor(message: string, status?: number, data?: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.data = data;
+  }
+}
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  if (!headers.has("Content-Type") && init.body) {
+  const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
+  if (!headers.has("Content-Type") && init.body && !isFormData) {
     headers.set("Content-Type", "application/json");
   }
   const token = getToken();
@@ -41,26 +53,43 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     try {
       response = await fetch(path, { ...init, headers });
     } catch {
-      throw new Error("Could not reach the GoogleDoko server. Make sure the API is running on port 4000.");
+      throw new ApiError("Could not reach the GoogleDoko server. Make sure the API is running on port 4000.");
     }
   }
   const raw = (await response.json().catch(() => ({}))) as any;
   if (!response.ok) {
-    const errorMsg = raw.error || raw.message || (raw.errors && JSON.stringify(raw.errors)) || "Request failed";
-    throw new Error(errorMsg);
+    const errorMsg =
+      raw.error ||
+      raw.message ||
+      (raw.errors && Array.isArray(raw.errors) ? raw.errors.map((e: any) => e.msg || e.message).join(", ") : undefined) ||
+      (raw.errors && typeof raw.errors === "object" ? JSON.stringify(raw.errors) : undefined) ||
+      `Request failed with status ${response.status}`;
+    throw new ApiError(errorMsg, response.status, raw);
   }
-  if (raw && typeof raw === "object" && "data" in raw && raw.data !== undefined) {
-    if (typeof raw.data === "object" && raw.data !== null && !Array.isArray(raw.data)) {
-      return { ok: raw.ok ?? raw.success ?? true, ...raw, ...raw.data } as T;
+  if (raw && typeof raw === "object") {
+    const isOk = raw.ok ?? raw.success ?? true;
+    if ("data" in raw && raw.data !== undefined) {
+      if (typeof raw.data === "object" && raw.data !== null && !Array.isArray(raw.data)) {
+        return { ok: isOk, ...raw, ...raw.data } as T;
+      }
+      return raw.data as T;
     }
-    return raw.data as T;
+    return { ok: isOk, ...raw } as T;
   }
   return raw as T;
 }
 
 export const api = {
   products: () => request<AdminProduct[]>("/api/products"),
-  resetPassword: (token: string, password: string) => request('/api/auth/reset', { method: 'POST', body: JSON.stringify({ token, password }) }),
+  resetPassword: (payload: { email: string; token: string; password?: string; newPassword?: string } | { token: string; password: string; email?: string }) => {
+    const email = "email" in payload && payload.email ? payload.email : "";
+    const token = payload.token;
+    const password = "password" in payload && payload.password ? payload.password : ("newPassword" in payload ? payload.newPassword : "");
+    return request<{ ok: boolean; message?: string }>("/api/auth/reset", {
+      method: "POST",
+      body: JSON.stringify({ email, token, password, newPassword: password }),
+    });
+  },
   subscribe: (email: string) => request('/api/newsletter', { method: 'POST', body: JSON.stringify({ email }) }),
   support: (body: Record<string, string>) => request<{ id: number }>('/api/support', { method: 'POST', body: JSON.stringify(body) }),
   adminSupport: () => request<SupportMessage[]>('/api/admin/support'),
@@ -86,14 +115,17 @@ export const api = {
       body: JSON.stringify(body),
     }),
   forgotPassword: (email: string) =>
-    request<{ ok: boolean; delivery: string }>("/api/auth/forgot", { method: "POST", body: JSON.stringify({ email }) }),
+    request<{ ok: boolean; resetToken?: string; message?: string; delivery?: string }>("/api/auth/forgot", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
   me: () => request<SessionPayload>("/api/auth/me"),
   updateProfile: (body: unknown) =>
     request<SessionPayload>("/api/auth/profile", { method: "PUT", body: JSON.stringify(body) }),
   changePassword: (current: string, next: string) =>
     request<{ ok: boolean }>("/api/auth/password", {
       method: "PUT",
-      body: JSON.stringify({ current, next }),
+      body: JSON.stringify({ current, next, currentPassword: current, newPassword: next }),
     }),
   saveShop: (body: unknown) =>
     request<SessionPayload>("/api/me/shop", { method: "PUT", body: JSON.stringify(body) }),
@@ -102,6 +134,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  getUserOrders: () => request<any[]>("/api/orders"),
   getOrderById: (id: string) => request<any>(`/api/orders/${id}`),
   adminOverview: () => request<AdminOverview>("/api/admin/overview"),
   adminUsers: () => request<AdminUser[]>("/api/admin/users"),
@@ -164,16 +197,10 @@ export const api = {
     request<ProductReview>("/api/reviews", { method: "POST", body: JSON.stringify(body) }),
 
   // Image Upload
-  uploadImage: async (file: File): Promise<{ ok: boolean; url: string }> => {
+  uploadImage: (file: File) => {
     const form = new FormData();
     form.append("image", file);
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    const res = await fetch(`${API_BASE}/api/upload`, { method: "POST", headers, body: form });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Upload failed");
-    return data;
+    return request<{ ok: boolean; url: string }>("/api/upload", { method: "POST", body: form });
   },
 
   // Admin reviews
@@ -205,16 +232,10 @@ export const api = {
     request<{ points: number; log: RewardEntry[] }>("/api/rewards/redeem", { method: "POST", body: JSON.stringify({ amount }) }),
 
   // Profile photo upload
-  uploadProfilePhoto: async (file: File): Promise<{ ok: boolean; photo: string }> => {
+  uploadProfilePhoto: (file: File) => {
     const form = new FormData();
     form.append("photo", file);
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    const res = await fetch(`${API_BASE}/api/auth/photo`, { method: "POST", headers, body: form });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Photo upload failed");
-    return data;
+    return request<{ ok: boolean; photo: string }>("/api/auth/photo", { method: "POST", body: form });
   },
 
   // Settings, Coupons & Checkout Calculation
@@ -229,7 +250,80 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ items, couponCode }),
     }),
+
+  // Categories & Products
+  categories: () => request<ApiCategory[]>("/api/categories"),
+  categoryBySlug: (slug: string) => request<ApiCategory>(`/api/categories/${encodeURIComponent(slug)}`),
+  categoryProducts: (name: string) =>
+    request<AdminProduct[]>(`/api/categories/${encodeURIComponent(name)}/products`),
+  popularProducts: (limit = 8) => request<AdminProduct[]>(`/api/products/popular?limit=${limit}`),
+  featuredProducts: (limit = 8) => request<AdminProduct[]>(`/api/products/featured?limit=${limit}`),
+  latestProducts: (limit = 8) => request<AdminProduct[]>(`/api/products/latest?limit=${limit}`),
+
+  // Offers
+  offers: () => request<{ banners: ApiOfferBanner[]; activeCoupons: any[] }>("/api/offers"),
+
+  // Places
+  places: () => request<ApiPlace[]>("/api/places"),
+  placeById: (id: string) =>
+    request<{ place: ApiPlace; products: AdminProduct[] }>(`/api/places/${encodeURIComponent(id)}`),
+
+  // Vendor Orders
+  vendorOrders: () => request<AdminOrder[]>("/api/vendor/orders"),
+
+  // Order Tracking
+  trackOrder: (id: string) => request<ApiOrderTracking>(`/api/orders/${encodeURIComponent(id)}/track`),
 };
+
+export interface ApiCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  productCount: number;
+  image: string;
+  theme: "orange" | "green" | "red" | "teal" | "yellow" | "blue" | "purple";
+  icon: string;
+}
+
+export interface ApiOfferBanner {
+  id: number;
+  title: string;
+  description: string;
+  buttonText: string;
+  image: string;
+  theme: "green" | "yellow" | "blue" | "orange";
+  to: string;
+  badge?: string;
+  code?: string;
+}
+
+export interface ApiPlace {
+  id: string;
+  name: string;
+  origin: string;
+  district: string;
+  productsCount: number;
+  totalSold: number;
+  image: string;
+  description: string;
+}
+
+export interface ApiOrderTracking {
+  orderId: string;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  recipientName: string;
+  deliveryAddress: string;
+  recipientPhone: string;
+  items: any[];
+  total: number;
+  subtotal: number;
+  deliveryFee: number;
+  discount: number;
+  steps: Array<{ step: string; date: string; status: "complete" | "current" | "pending" }>;
+}
 
 export interface SessionUser {
   id: number;

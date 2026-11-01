@@ -44,14 +44,19 @@ function OrderTracking() {
   const [order, setOrder] = useState<NormalizedOrder | null>(
     localOrder ? normalizeOrder(localOrder) : null
   );
+  const [searching, setSearching] = useState(!localOrder);
 
   useEffect(() => {
     if (!order && id && getToken()) {
+      setSearching(true);
       api.getOrderById(id)
         .then((res) => {
           if (res) setOrder(normalizeOrder(res));
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setSearching(false));
+    } else if (!order) {
+      setSearching(false);
     }
   }, [order, id]);
 
@@ -64,8 +69,17 @@ function OrderTracking() {
         <Navbar />
         <main className="checkout-page">
           <div className="checkout-wrap">
-            <h1>Looking up order #{activeId}...</h1>
-            <p>If this order was recently placed, you can also view it in your orders list.</p>
+            {searching ? (
+              <>
+                <h1>Looking up order #{activeId}...</h1>
+                <p>If this order was recently placed, you can also view it in your orders list.</p>
+              </>
+            ) : (
+              <>
+                <h1>Order #{activeId} not found</h1>
+                <p>We could not locate this order in your order history.</p>
+              </>
+            )}
             <div style={{ display: "flex", gap: "12px", marginTop: "1rem" }}>
               <Link to={`/orders/${activeId}`} className="co-continue" style={{ textDecoration: "none" }}>
                 Open Order Details

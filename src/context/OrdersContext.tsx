@@ -12,6 +12,7 @@ import { products } from "../data/products";
 import { orders as seedOrders, type Order } from "../data/orders";
 import { SHOP_SESSION_EVENT } from "../utils/shopSession";
 import { normalizeOrder } from "../utils/normalizeOrder";
+import { api, getToken } from "../api/client";
 
 interface OrdersContextValue {
   orders: Order[];
@@ -77,12 +78,14 @@ function withProductId(order: Order): Order {
 
 function readOrders(): Order[] {
   try {
+    const token = getToken();
     const saved = localStorage.getItem(storageKey);
-    return saved
-      ? (JSON.parse(saved) as Order[]).map(withProductId)
-      : seedOrders;
+    if (saved) {
+      return (JSON.parse(saved) as Order[]).map(withProductId);
+    }
+    return token ? [] : seedOrders;
   } catch {
-    return seedOrders;
+    return [];
   }
 }
 
@@ -94,12 +97,25 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   }, [orders]);
 
   useEffect(() => {
+    const token = getToken();
+    if (token) {
+      api
+        .getUserOrders()
+        .then((serverOrders) => {
+          if (Array.isArray(serverOrders)) {
+            const normalized = serverOrders.map(normalizeOrder).filter(Boolean) as Order[];
+            setOrders(normalized);
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
     function hydrate(raw: unknown) {
       if (!Array.isArray(raw)) return;
       const normalized = raw.map(normalizeOrder).filter(Boolean) as Order[];
-      if (normalized.length > 0) {
-        setOrders(normalized);
-      }
+      setOrders(normalized);
     }
     function handleSession(event: Event) { hydrate((event as CustomEvent).detail?.orders || []); }
     function handleOrders(event: Event) { hydrate((event as CustomEvent).detail); }

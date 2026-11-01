@@ -24,7 +24,7 @@ import PopularProducts from "../components/PopularProducts";
 import Newsletter from "../components/NewsLetter";
 import Footer from "../components/layout/Footer";
 
-import { products, type Product } from "../data/products";
+import { type Product } from "../data/products";
 import { getProductDetails } from "../data/productDetails";
 import {
   getProductVarieties,
@@ -99,13 +99,12 @@ function ProductDetail() {
     }
   }
 
-  const { data: serverProduct } = useGetProductByIdQuery(id || "", {
+  const { data: serverProduct, isLoading: isProductLoading } = useGetProductByIdQuery(id || "", {
     skip: !id,
   });
-  const staticProduct = products.find((item) => item.id === id);
   const rawProduct = serverProduct
     ? (serverProduct as unknown as Product)
-    : staticProduct;
+    : undefined;
 
   const product: Product | undefined = useMemo(() => {
     if (!rawProduct) return undefined;
@@ -133,19 +132,45 @@ function ProductDetail() {
 
   const currentVariety = varietiesList[selectedVarietyIndex] || varietiesList[0];
 
+  const currentImage =
+    currentVariety?.image ||
+    product?.image ||
+    "/src/frontend/assets/images/organic-vegetables.jpg";
+
+  const displayTitle = currentVariety?.title || product?.name || "";
+  const displayPrice = currentVariety?.price || product?.price || 0;
+  const displayOrigin = currentVariety?.origin || product?.origin || "Nepal";
+  const displaySeller = currentVariety?.seller || product?.seller || "Local Farm";
+  const displayWeight = currentVariety?.weight || product?.weight || "1 kg";
+
   const activeProductForPurchase: Product = useMemo(() => {
     if (!product) return product as unknown as Product;
-    if (!currentVariety) return product;
     return {
       ...product,
-      name: currentVariety.title || product.name,
-      price: currentVariety.price || product.price,
-      image: currentVariety.image || product.image,
-      origin: currentVariety.origin || product.origin,
-      seller: currentVariety.seller || product.seller,
-      weight: currentVariety.weight || product.weight,
+      name: displayTitle,
+      price: displayPrice,
+      image: product.image || currentImage,
+      origin: displayOrigin,
+      seller: displaySeller,
+      weight: displayWeight,
     };
-  }, [product, currentVariety]);
+  }, [product, displayTitle, displayPrice, displayOrigin, displaySeller, displayWeight, currentImage]);
+
+  if (isProductLoading) {
+    return (
+      <>
+        <TopBar />
+        <Navbar />
+        <main className="product-detail-page">
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh", flexDirection: "column", gap: "16px" }}>
+            <Loader2 className="animate-spin" size={36} color="#16a34a" />
+            <p style={{ color: "#6b7280" }}>Loading product details…</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   if (!product) {
     return (
@@ -165,17 +190,7 @@ function ProductDetail() {
   }
 
   const details = getProductDetails(product.id, product.name);
-  const currentImage =
-    currentVariety?.image ||
-    product.image ||
-    "/src/frontend/assets/images/organic-vegetables.jpg";
-
-  const displayTitle = currentVariety?.title || product.name;
-  const displayPrice = currentVariety?.price || product.price;
-  const displayOrigin = currentVariety?.origin || product.origin;
-  const displaySeller = currentVariety?.seller || product.seller;
   const displaySummary = currentVariety?.description || details.about;
-  const displayWeight = currentVariety?.weight || product.weight || "1 kg";
 
   return (
     <>
@@ -235,8 +250,8 @@ function ProductDetail() {
                 </button>
               </div>
 
-              {/* Four Cube Size Boxes with Apple Varieties */}
-              <div className="product-variety-cubes">
+              {/* Four Cube Size Boxes with Product Angles / Perspectives */}
+              <div className="product-variety-cubes" role="region" aria-label="Product angle gallery">
                 {varietiesList.map((variety, index) => {
                   const isSelected = selectedVarietyIndex === index;
                   return (
@@ -246,7 +261,7 @@ function ProductDetail() {
                       className={`product-variety-cube ${isSelected ? "active" : ""}`}
                       onClick={() => setSelectedVarietyIndex(index)}
                       title={variety.name}
-                      aria-label={`Select variety: ${variety.name}`}
+                      aria-label={`Select angle: ${variety.name}`}
                     >
                       <img
                         src={variety.thumb || variety.image}

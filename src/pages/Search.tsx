@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Leaf, Loader2, MapPin, Search as SearchIcon } from "lucide-react";
 
 import TopBar from "../components/TopBar";
@@ -14,6 +14,7 @@ import Pagination, {
 import { searchPlaces } from "../data/search";
 import { api } from "../api/client";
 import type { Product } from "../data/products";
+import { useGetPlacesQuery } from "../store/api/apiSlice";
 
 function Search() {
   const [searchParams] = useSearchParams();
@@ -22,6 +23,7 @@ function Search() {
   const [placesPage, setPlacesPage] = useState(1);
   const [apiProducts, setApiProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const { data: serverPlaces } = useGetPlacesQuery();
 
   // Backend search: fires whenever query changes
   useEffect(() => {
@@ -58,7 +60,21 @@ function Search() {
       .finally(() => setLoading(false));
   }, [query]);
 
-  const matchedPlaces = searchPlaces(query);
+  const matchedPlaces = useMemo(() => {
+    if (!query) return [];
+    const q = query.toLowerCase();
+    if (serverPlaces && serverPlaces.length > 0) {
+      return serverPlaces
+        .map((p: any) => ({
+          origin: p.origin,
+          name: p.name,
+          products: p.totalSold || p.productsCount || 0,
+          image: p.image,
+        }))
+        .filter((p: any) => p.name.toLowerCase().includes(q) || p.origin.toLowerCase().includes(q));
+    }
+    return searchPlaces(query);
+  }, [serverPlaces, query]);
   const total = apiProducts.length + matchedPlaces.length;
   const paged = paginateItems(apiProducts, page);
   const pagedPlaces = paginateItems(matchedPlaces, placesPage, PLACES_PAGE_SIZE);

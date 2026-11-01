@@ -49,8 +49,12 @@ function VendorShell() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [search, setSearch] = useState("");
   const unreadCount = vendorNotifications.length;
-  const farm =
-    user.vendor?.businessName || `${user.firstName} ${user.lastName}`.trim() || "Vendor";
+  const vendorName =
+    `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+    user.vendor?.businessName ||
+    "Vendor";
+  const farm = user.vendor?.businessName || vendorName;
+  const avatarLetter = (vendorName || farm || "V").slice(0, 1).toUpperCase();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace state={{ from: "/vendor", role: "vendor" }} />;
@@ -238,11 +242,15 @@ function VendorShell() {
             </div>
             <div className="vd-user">
               <span className="vd-avatar" aria-hidden="true">
-                {user.photo || user.vendor?.photo ? <img src={user.photo || user.vendor?.photo} alt="" /> : farm.slice(0, 1)}
+                {user.photo || user.vendor?.photo ? (
+                  <img src={user.photo || user.vendor?.photo} alt="" />
+                ) : (
+                  avatarLetter
+                )}
               </span>
               <div>
-                <strong>{farm}</strong>
-                <small>Verified Local Seller</small>
+                <strong>{vendorName}</strong>
+                <small>{farm && farm.toLowerCase() !== vendorName.toLowerCase() ? `${farm} · Verified Seller` : "Verified Local Seller"}</small>
               </div>
             </div>
           </div>

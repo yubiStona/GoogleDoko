@@ -8,15 +8,14 @@ import Pagination, {
   paginateItems,
 } from "../components/Pagination";
 
-import { products, type Product } from "../data/products";
+import { type Product } from "../data/products";
 import { useGetProductsQuery } from "../store/api/apiSlice";
+import { ProductSkeletonGrid } from "../components/product/ProductSkeleton";
 
 function Shop() {
   const [page, setPage] = useState(1);
-  const { data: serverProducts } = useGetProductsQuery();
-  const allProducts = (serverProducts && serverProducts.length > 0
-    ? (serverProducts as unknown as Product[])
-    : products);
+  const { data: serverProducts, isLoading, isError, refetch } = useGetProductsQuery();
+  const allProducts = (serverProducts || []) as unknown as Product[];
   const paged = paginateItems(allProducts, page);
 
   function changePage(nextPage: number) {
@@ -49,17 +48,43 @@ function Shop() {
             <p>Fresh products, better living</p>
           </div>
 
-          <div className="categories-products-grid">
-            {paged.items.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="categories-products-grid">
+              <ProductSkeletonGrid count={8} />
+            </div>
+          ) : isError ? (
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <p style={{ color: "#ef4444", marginBottom: "16px", fontWeight: 500 }}>
+                Unable to load products from server.
+              </p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="auth-btn"
+                style={{ width: "auto", padding: "8px 24px", margin: "0 auto" }}
+              >
+                Retry
+              </button>
+            </div>
+          ) : allProducts.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <p style={{ color: "#6b7280" }}>No products available right now.</p>
+            </div>
+          ) : (
+            <>
+              <div className="categories-products-grid">
+                {paged.items.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
 
-          <Pagination
-            page={paged.current}
-            totalPages={paged.totalPages}
-            onChange={changePage}
-          />
+              <Pagination
+                page={paged.current}
+                totalPages={paged.totalPages}
+                onChange={changePage}
+              />
+            </>
+          )}
         </section>
       </main>
 

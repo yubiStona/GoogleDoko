@@ -5,11 +5,14 @@ import { store } from "./store";
 import "./index.css";
 import "./App.css";
 import App from "./App.tsx";
+import ErrorBoundary from "./components/common/ErrorBoundary.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Provider store={store}>
-      <App />
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <App />
+      </Provider>
+    </ErrorBoundary>
   </StrictMode>,
 );

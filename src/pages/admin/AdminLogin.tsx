@@ -159,13 +159,6 @@ export function AdminLogin() {
     }
   }
 
-  function handleAutofillDemo() {
-    setLoginEmail("admin@gmail.com");
-    setLoginPassword("Admin123@@");
-    setLoginErrors({});
-    setServerError("");
-  }
-
   return (
     <div
       style={{
@@ -383,7 +376,7 @@ export function AdminLogin() {
                       setLoginEmail(e.target.value);
                       if (loginErrors.email) setLoginErrors((prev) => ({ ...prev, email: undefined }));
                     }}
-                    placeholder="admin@gmail.com"
+                    placeholder="admin@example.com"
                     autoComplete="username"
                     style={{
                       width: "100%",
@@ -487,40 +480,6 @@ export function AdminLogin() {
               >
                 {loading ? "Authenticating..." : "Sign In to Admin Console"}
               </button>
-
-              {/* Autofill Demo Hint */}
-              <div
-                style={{
-                  marginTop: 18,
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  background: "#f8fafc",
-                  border: "1px dashed #cbd5e1",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  fontSize: 12,
-                  color: "#64748b",
-                }}
-              >
-                <span>Demo Admin: <strong>admin@gmail.com</strong></span>
-                <button
-                  type="button"
-                  onClick={handleAutofillDemo}
-                  style={{
-                    background: "#e2e8f0",
-                    border: "none",
-                    borderRadius: 6,
-                    padding: "4px 10px",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "#334155",
-                    cursor: "pointer",
-                  }}
-                >
-                  Autofill
-                </button>
-              </div>
             </form>
           )}
 

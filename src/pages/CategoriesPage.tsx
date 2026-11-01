@@ -8,21 +8,13 @@ import ProductCard from "../components/product/ProductCard";
 import Footer from "../components/layout/Footer";
 import Pagination, { paginateItems } from "../components/Pagination";
 
-import { products, type Product } from "../data/products";
-import { useGetProductsQuery } from "../store/api/apiSlice";
+import { type Product } from "../data/products";
+import { useGetProductsQuery, useGetCategoriesQuery } from "../store/api/apiSlice";
+import { ProductSkeletonGrid } from "../components/product/ProductSkeleton";
 import categoriesHeroBanner from "../assets/images/categories/categories-hero-banner.png";
 import categoryBottomPromo from "../assets/images/categories/category-bottom-promo.png";
 
-type Category =
-    | "All"
-    | "Fruits"
-    | "Vegetables"
-    | "Spices"
-    | "Dairy & Eggs"
-    | "Grains"
-    | "Honey";
-
-const categoryOptions: Category[] = [
+const defaultCategoryOptions = [
     "All",
     "Fruits",
     "Vegetables",
@@ -37,26 +29,26 @@ function CategoriesPage() {
     const categoryFromUrl = searchParams.get("category");
     const placeFromUrl = searchParams.get("place");
 
-    const { data: serverProducts } = useGetProductsQuery();
-    const allProducts = (
-        serverProducts && serverProducts.length > 0
-            ? (serverProducts as unknown as Product[])
-            : products
-    );
+    const { data: serverProducts, isLoading } = useGetProductsQuery();
+    const { data: serverCategories } = useGetCategoriesQuery();
 
-    const [selectedCategory, setSelectedCategory] = useState<Category>(
-        categoryFromUrl && categoryOptions.includes(categoryFromUrl as Category)
-            ? (categoryFromUrl as Category)
-            : "All",
+    const categoryOptions = useMemo(() => {
+        if (serverCategories && serverCategories.length > 0) {
+            return ["All", ...serverCategories.map((c: any) => c.name)];
+        }
+        return defaultCategoryOptions;
+    }, [serverCategories]);
+
+    const allProducts = (serverProducts || []) as unknown as Product[];
+
+    const [selectedCategory, setSelectedCategory] = useState<string>(
+        categoryFromUrl || "All"
     );
     const [page, setPage] = useState(1);
 
     useEffect(() => {
-        if (
-            categoryFromUrl &&
-            categoryOptions.includes(categoryFromUrl as Category)
-        ) {
-            setSelectedCategory(categoryFromUrl as Category);
+        if (categoryFromUrl) {
+            setSelectedCategory(categoryFromUrl);
         }
     }, [categoryFromUrl]);
 
@@ -87,7 +79,7 @@ function CategoriesPage() {
             ?.scrollIntoView({ behavior: "auto", block: "start" });
     }
 
-    function chooseCategory(category: Category) {
+    function chooseCategory(category: string) {
         setSelectedCategory(category);
         setPage(1);
     }
@@ -163,7 +155,11 @@ function CategoriesPage() {
                         </p>
                     </div>
 
-                    {filteredProducts.length > 0 ? (
+                    {isLoading ? (
+                        <div className="categories-products-grid">
+                            <ProductSkeletonGrid count={8} />
+                        </div>
+                    ) : filteredProducts.length > 0 ? (
                         <>
                             <div className="categories-products-grid">
                                 {paged.items.map((product) => (
