@@ -106,6 +106,7 @@ function CustomerReviews() {
   const [visible, setVisible] = useState(visibleCount);
   const [index, setIndex] = useState(0);
   const maxIndex = Math.max(0, reviews.length - visible);
+  const currentIndex = Math.min(index, maxIndex);
 
   useEffect(() => {
     function update() {
@@ -116,10 +117,6 @@ function CustomerReviews() {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-
-  useEffect(() => {
-    setIndex((current) => Math.min(current, maxIndex));
-  }, [maxIndex]);
 
   function goTo(next: number) {
     setIndex(Math.min(maxIndex, Math.max(0, next)));
@@ -142,7 +139,7 @@ function CustomerReviews() {
           <div
             className="customer-reviews-track"
             style={{
-              transform: `translateX(calc(-${index} * (100% + var(--review-gap)) / ${visible}))`,
+              transform: `translateX(calc(-${currentIndex} * (100% + var(--review-gap)) / ${visible}))`,
             }}
           >
             {reviews.map((review) => (

@@ -1,43 +1,81 @@
 import CategoryCard from "./CategoryCard";
 import { Link } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import { useGetCategoriesQuery } from "../store/api/apiSlice";
+import { useSideScroll } from "../hooks/useSideScroll";
 
 const fallbackCategories = [
   {
     id: "fruits",
     name: "Fruits",
-    description: "Fresh & juicy handpicked",
+    description: "Fresh & juicy handpicked mountain fruits",
     image: "/src/frontend/assets/images/categories/fruits.jpg",
     icon: "fruits" as const,
     theme: "orange" as const,
     to: "/categories?category=Fruits",
   },
   {
-    id: "spices",
-    name: "Spices",
-    description: "Aroma rich & natural",
-    image: "/src/frontend/assets/images/categories/spices.jpg",
-    icon: "spices" as const,
-    theme: "green" as const,
-    to: "/categories?category=Spices",
-  },
-  {
     id: "vegetables",
     name: "Vegetables",
-    description: "Farm fresh & healthy",
+    description: "Farm fresh organic leafy greens & tubers",
     image: "/src/frontend/assets/images/categories/vegetables.jpg",
     icon: "vegetables" as const,
     theme: "red" as const,
     to: "/categories?category=Vegetables",
   },
   {
-    id: "others",
-    name: "Others",
-    description: "More good things for you",
-    image: "/src/frontend/assets/images/categories/others.jpg",
-    icon: "others" as const,
-    theme: "teal" as const,
-    to: "/categories",
+    id: "dairy-eggs",
+    name: "Dairy & Eggs",
+    description: "Farm fresh milk, chhurpi & free-range eggs",
+    image: "/assets/images/categories/dairy.jpg",
+    icon: "dairy" as const,
+    theme: "yellow" as const,
+    to: "/categories?category=Dairy%20%26%20Eggs",
+  },
+  {
+    id: "spices",
+    name: "Spices",
+    description: "Aroma rich organic timur, cumin & cloves",
+    image: "/src/frontend/assets/images/categories/spices.jpg",
+    icon: "spices" as const,
+    theme: "green" as const,
+    to: "/categories?category=Spices",
+  },
+  {
+    id: "honey",
+    name: "Honey",
+    description: "100% wild Himalayan honey & pure nectar",
+    image: "/assets/images/categories/honey.jpg",
+    icon: "honey" as const,
+    theme: "yellow" as const,
+    to: "/categories?category=Honey",
+  },
+  {
+    id: "grains",
+    name: "Grains",
+    description: "Himalayan Marsi rice, millet & lentils",
+    image: "/src/frontend/assets/images/categories/grains.jpg",
+    icon: "grains" as const,
+    theme: "yellow" as const,
+    to: "/categories?category=Grains",
+  },
+  {
+    id: "beauty",
+    name: "Beauty & Personal Care",
+    description: "Natural herbal soaps & skincare essentials",
+    image: "/assets/images/categories/beauty.jpg",
+    icon: "beauty" as const,
+    theme: "rose" as const,
+    to: "/categories?category=Beauty%20%26%20Personal%20Care",
+  },
+  {
+    id: "garden",
+    name: "Garden & Outdoor",
+    description: "Organic seeds, live plants & garden tools",
+    image: "/assets/images/categories/garden.jpg",
+    icon: "garden" as const,
+    theme: "green" as const,
+    to: "/categories?category=Garden%20%26%20Outdoor",
   },
 ];
 
@@ -48,6 +86,7 @@ export interface CategoryMetaEntry {
   description: string;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const CATEGORY_META_REGISTRY: Record<string, CategoryMetaEntry> = {
   fruits: {
     icon: "fruits",
@@ -129,6 +168,7 @@ export const CATEGORY_META_REGISTRY: Record<string, CategoryMetaEntry> = {
   },
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getCategoryMeta(name: string): CategoryMetaEntry {
   const n = (name || "").toLowerCase().trim();
   if (CATEGORY_META_REGISTRY[n]) {
@@ -157,9 +197,10 @@ export function getCategoryMeta(name: string): CategoryMetaEntry {
 
 function Categories() {
   const { data: serverCategories } = useGetCategoriesQuery();
+  const { scrollRef, scrollRight } = useSideScroll();
 
   const categories = (serverCategories && serverCategories.length > 0)
-    ? serverCategories.slice(0, 4).map((c: any) => {
+    ? serverCategories.slice(0, 10).map((c) => {
         const meta = getCategoryMeta(c.name);
         // Use server image if provided and not generic others.jpg, else use meta image
         const hasCustomServerImage = c.image && !c.image.includes("others.jpg");
@@ -178,16 +219,29 @@ function Categories() {
     : fallbackCategories;
 
   return (
-    <section className="categories-section">
+    <section className="categories-section" aria-labelledby="shop-categories-heading">
       <div className="section-header">
-        <h2>Shop By Categories</h2>
+        <div>
+          <h2 id="shop-categories-heading">Shop By Categories</h2>
+          <p className="section-subheading">Browse our freshest harvest, dairy, and artisanal goods</p>
+        </div>
 
-        <Link to="/categories" className="section-view-all">
-          View all
-        </Link>
+        <div className="section-header-actions">
+          <Link to="/categories" className="section-view-all">
+            View all
+          </Link>
+          <button
+            type="button"
+            onClick={scrollRight}
+            className="section-scroll-next-btn"
+            aria-label="Next categories"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
 
-      <div className="categories-grid">
+      <div className="categories-grid categories-side-scroll-track" ref={scrollRef}>
         {categories.map((category) => (
           <CategoryCard
             key={category.id}
