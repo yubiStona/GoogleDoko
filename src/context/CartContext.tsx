@@ -59,11 +59,19 @@ export function normalizeCartItem(raw: any): CartItem {
 
   const origin = raw.origin || prod.origin || catalogProd?.origin || "";
   const seller = raw.seller || prod.seller || catalogProd?.seller || "";
+  const category = raw.category || prod.category || catalogProd?.category || "";
+  const sellingUnit = raw.sellingUnit || prod.sellingUnit || catalogProd?.sellingUnit || "";
+  const allowDecimals = raw.allowDecimals !== undefined ? raw.allowDecimals : (prod.allowDecimals ?? catalogProd?.allowDecimals ?? 0);
+  const variant = raw.variant || prod.selectedVariant || raw.selectedVariant || null;
 
   return {
     id,
     name,
     weight,
+    sellingUnit,
+    allowDecimals,
+    variant,
+    category,
     price,
     quantity,
     image,
@@ -238,6 +246,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 id: product.id,
                 name: product.name,
                 weight: product.weight,
+                sellingUnit: (product as any).sellingUnit || "",
+                allowDecimals: (product as any).allowDecimals ?? 0,
+                variant: (product as any).selectedVariant || (product as any).variant || null,
+                category: product.category,
                 price: product.price,
                 quantity,
                 image: product.image,

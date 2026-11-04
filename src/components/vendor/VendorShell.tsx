@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   BarChart3,
@@ -21,12 +21,8 @@ import {
 
 import { useAccount } from "../../context/AccountContext";
 import LogoMark from "../LogoMark";
-
-const vendorNotifications = [
-  { id: "n1", text: "3 new incoming orders need review.", to: "/vendor/orders" },
-  { id: "n2", text: "Honey stock is down to 40 jars.", to: "/vendor/products" },
-  { id: "n3", text: "Arjun Karki left a 5-star review on honey.", to: "/vendor/reviews" },
-];
+import { api } from "../../api/client";
+import type { VendorNotification } from "../../api/client";
 
 const links = [
   { to: "/vendor", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -48,13 +44,44 @@ function VendorShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const unreadCount = vendorNotifications.length;
+  const [notifications, setNotifications] = useState<VendorNotification[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    if (isLoggedIn && user.role === "vendor") {
+      api.vendorNotifications()
+        .then((res) => {
+          if (active && Array.isArray(res)) {
+            setNotifications(res);
+          }
+        })
+        .catch(() => {
+          if (active) setNotifications([]);
+        });
+    }
+    return () => {
+      active = false;
+    };
+  }, [isLoggedIn, user.role]);
+
+  const unreadCount = notifications.length;
   const vendorName =
     `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
     user.vendor?.businessName ||
     "Vendor";
   const farm = user.vendor?.businessName || vendorName;
   const avatarLetter = (vendorName || farm || "V").slice(0, 1).toUpperCase();
+
+  const statusLabel =
+    user.vendor?.status === "approved"
+      ? "Verified Seller"
+      : user.vendor?.status === "under_review"
+      ? "Under Review"
+      : user.vendor?.status === "on_hold"
+      ? "On Hold"
+      : user.vendor?.status === "rejected"
+      ? "Suspended"
+      : "Verified Seller";
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace state={{ from: "/vendor", role: "vendor" }} />;
@@ -224,33 +251,39 @@ function VendorShell() {
               {notesOpen ? (
                 <div className="vd-notes" role="menu">
                   <strong>Notifications ({unreadCount})</strong>
-                  {vendorNotifications.map((note) => (
-                    <button
-                      type="button"
-                      className="vd-note-item"
-                      key={note.id}
-                      onClick={() => {
-                        setNotesOpen(false);
-                        navigate(note.to);
-                      }}
-                    >
-                      {note.text}
-                    </button>
-                  ))}
+                  {notifications.length === 0 ? (
+                    <span className="vd-note-item" style={{ color: "#7a8c80", fontSize: 13, textAlign: "center", padding: "12px 8px" }}>
+                      No new notifications
+                    </span>
+                  ) : (
+                    notifications.map((note) => (
+                      <button
+                        type="button"
+                        className="vd-note-item"
+                        key={note.id}
+                        onClick={() => {
+                          setNotesOpen(false);
+                          navigate(note.to);
+                        }}
+                      >
+                        {note.text}
+                      </button>
+                    ))
+                  )}
                 </div>
               ) : null}
             </div>
             <div className="vd-user">
               <span className="vd-avatar" aria-hidden="true">
-                {user.photo || user.vendor?.photo ? (
-                  <img src={user.photo || user.vendor?.photo} alt="" />
+                {user.photo ? (
+                  <img src={user.photo} alt="" />
                 ) : (
                   avatarLetter
                 )}
               </span>
               <div>
                 <strong>{vendorName}</strong>
-                <small>{farm && farm.toLowerCase() !== vendorName.toLowerCase() ? `${farm} · Verified Seller` : "Verified Local Seller"}</small>
+                <small>{farm && farm.toLowerCase() !== vendorName.toLowerCase() ? `${farm} · ${statusLabel}` : statusLabel}</small>
               </div>
             </div>
           </div>

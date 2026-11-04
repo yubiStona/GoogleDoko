@@ -14,6 +14,9 @@ import { useCart } from "../../context/CartContext";
 import { useCheckout } from "../../context/CheckoutContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useShopAuth } from "../../hooks/useShopAuth";
+import {
+  resolveProductSellingUnit,
+} from "../../utils/productUnits";
 
 interface ProductCardProps {
   product: Product;
@@ -76,25 +79,45 @@ function ProductCard({ product }: ProductCardProps) {
 
       {/* Product Information */}
       <div className="product-info">
+        {(() => {
+          const sellingUnit = resolveProductSellingUnit(
+            product.category,
+            product.sellingUnit,
+            product.weight
+          );
+          // Concise measurement/unit badge for top-right (e.g. "200 g", "180 g", "1 piece", "1 kg")
+          const formatBadge = (rawWeight?: string, unit?: string) => {
+            if (rawWeight && rawWeight.trim().length > 0) {
+              const clean = rawWeight.replace(/\s*\(Net Weight\)/i, "").trim();
+              if (clean.length <= 10) return clean;
+            }
+            return unit ? `1 ${unit}` : "";
+          };
 
-        {/* Name + Weight */}
-        <div className="product-title-row">
+          const displayBadgeText = formatBadge(product.weight, sellingUnit);
 
-          <h3>
-            {product.name}
-          </h3>
+          return (
+            <>
+              {/* Name + Weight / Unit Badge */}
+              <div className="product-title-row">
+                <h3 title={product.name}>{product.name}</h3>
+                {displayBadgeText && (
+                  <span className="product-weight" title={displayBadgeText}>
+                    {displayBadgeText}
+                  </span>
+                )}
+              </div>
 
-          <span className="product-weight">
-            {product.weight}
-          </span>
-
-        </div>
-
-
-        {/* Price */}
-        <div className="product-price">
-          Rs {product.price.toLocaleString()}
-        </div>
+              {/* Price with Category-Aware Selling Unit */}
+              <div className="product-price">
+                Rs {product.price.toLocaleString()}{" "}
+                <span style={{ fontSize: "0.85em", fontWeight: 500, color: "#64748b" }}>
+                  / {sellingUnit}
+                </span>
+              </div>
+            </>
+          );
+        })()}
 
 
         {/* Rating + Sold */}

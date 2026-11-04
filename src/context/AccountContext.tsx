@@ -118,6 +118,29 @@ function asRole(role: string | undefined): AccountRole {
 
 function userFromSession(payload: SessionPayload, prevUser?: MockUser): MockUser {
   const account = payload.user;
+  const userPhoto = account.photo !== undefined && account.photo !== null
+    ? (account.photo || "")
+    : (prevUser?.photo || "");
+
+  const vendorPayload = account.vendor as any;
+  const prevVendor = prevUser?.vendor as any;
+  const mergedVendor: VendorProfile | undefined = vendorPayload || prevVendor
+    ? {
+        ...(prevVendor || {}),
+        ...(vendorPayload || {}),
+        banner: vendorPayload?.banner !== undefined
+          ? (vendorPayload.banner || "")
+          : (vendorPayload?.storeBanner !== undefined
+          ? (vendorPayload.storeBanner || "")
+          : (prevVendor?.banner || "")),
+        photo: vendorPayload?.photo !== undefined
+          ? (vendorPayload.photo || "")
+          : (vendorPayload?.storeLogo !== undefined
+          ? (vendorPayload.storeLogo || "")
+          : (prevVendor?.photo || "")),
+      }
+    : undefined;
+
   return {
     firstName: account.firstName,
     lastName: account.lastName,
@@ -127,10 +150,10 @@ function userFromSession(payload: SessionPayload, prevUser?: MockUser): MockUser
     verified: account.verified,
     rewardPoints: payload.points ?? prevUser?.rewardPoints ?? 0,
     referralCode: account.referralCode,
-    photo: account.photo || (account.vendor && (account.vendor as { photo?: string }).photo) || prevUser?.photo || "",
+    photo: userPhoto,
     password: "",
     role: asRole(account.role),
-    vendor: (account.vendor as VendorProfile | undefined) || prevUser?.vendor,
+    vendor: mergedVendor,
   };
 }
 
@@ -401,7 +424,15 @@ export function AccountProvider({ children }: { children: ReactNode }) {
           const updated = {
             ...prev,
             ...next,
-            vendor: next.vendor ? ({ ...prev.vendor, ...next.vendor } as VendorProfile) : prev.vendor,
+            photo: next.photo !== undefined ? next.photo : prev.photo,
+            vendor: next.vendor
+              ? ({
+                  ...prev.vendor,
+                  ...next.vendor,
+                  banner: next.vendor.banner !== undefined ? next.vendor.banner : prev.vendor?.banner,
+                  photo: next.vendor.photo !== undefined ? next.vendor.photo : prev.vendor?.photo,
+                } as VendorProfile)
+              : prev.vendor,
           };
           try {
             localStorage.setItem("googledoko-user", JSON.stringify({ ...updated, password: "" }));
@@ -412,7 +443,22 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         });
         try {
           const payload = await api.updateProfile(next);
-          setUser((prev) => userFromSession(payload, prev));
+          setUser((prev) => {
+            const nextU = userFromSession(payload, prev);
+            if (next.photo !== undefined) {
+              nextU.photo = next.photo;
+            }
+            if (next.vendor?.banner !== undefined && nextU.vendor) {
+              nextU.vendor.banner = next.vendor.banner;
+            }
+            if (next.vendor?.photo !== undefined && nextU.vendor) {
+              nextU.vendor.photo = next.vendor.photo;
+            }
+            try {
+              localStorage.setItem("googledoko-user", JSON.stringify({ ...nextU, password: "" }));
+            } catch {}
+            return nextU;
+          });
         } catch (err) {
           console.warn("Could not sync profile update to server", err);
         }

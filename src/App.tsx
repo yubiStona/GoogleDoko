@@ -17,6 +17,9 @@ import Orders from "./pages/Orders";
 import Cart from "./pages/Cart";
 import Shop from "./pages/Shop";
 import LocalPlaces from "./pages/LocalPlaces";
+import PlaceDetailPage from "./pages/places/PlaceDetailPage";
+import LifestyleLanding from "./pages/lifestyle/LifestyleLanding";
+import LifestyleCollectionPage from "./pages/lifestyle/LifestyleCollectionPage";
 import ProductDetail from "./pages/ProductDetail";
 import OrderDetail from "./pages/OrderDetail";
 import Support from "./pages/Support";
@@ -65,6 +68,7 @@ import {
   AdminVendors,
   AdminCoupons,
   AdminSettings,
+  AdminLifestyles,
 } from "./pages/admin/AdminPages";
 import {
   VendorAddProduct,
@@ -165,6 +169,9 @@ function App() {
           />
           <Route path="/shop" element={<Shop />} />
           <Route path="/places" element={<LocalPlaces />} />
+          <Route path="/places/:slug" element={<PlaceDetailPage />} />
+          <Route path="/lifestyle" element={<LifestyleLanding />} />
+          <Route path="/lifestyle/:slug" element={<LifestyleCollectionPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />
           <Route
@@ -256,6 +263,7 @@ function App() {
         <Route path="/vendor" element={<VendorShell />}>
           <Route index element={<VendorHome />} />
           <Route path="products/new" element={<VendorAddProduct />} />
+          <Route path="products/:id/edit" element={<VendorAddProduct />} />
           <Route path="products" element={<VendorProducts />} />
           <Route path="orders" element={<VendorOrders />} />
           <Route path="customers" element={<VendorCustomers />} />
@@ -276,6 +284,7 @@ function App() {
           <Route path="vendors" element={<AdminVendors />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="products" element={<AdminProducts />} />
+          <Route path="lifestyles" element={<AdminLifestyles />} />
           <Route path="reviews" element={<AdminReviews />} />
           <Route path="coupons" element={<AdminCoupons />} />
           <Route path="settings" element={<AdminSettings />} />

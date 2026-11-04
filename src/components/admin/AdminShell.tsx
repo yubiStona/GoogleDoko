@@ -17,6 +17,7 @@ import {
   Settings,
   X,
   Star,
+  Sparkles,
 } from "lucide-react";
 
 import { useAccount } from "../../context/AccountContext";
@@ -26,6 +27,7 @@ const links = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/admin/orders", label: "Orders", icon: ClipboardList },
   { to: "/admin/products", label: "Catalog", icon: Package },
+  { to: "/admin/lifestyles", label: "Lifestyle Collections", icon: Sparkles },
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/vendors", label: "Vendors & Farms", icon: Store },
   { to: "/admin/users", label: "Customers", icon: Users },

@@ -15,6 +15,10 @@ import {
   Star,
   Truck,
   UserRound,
+  ThumbsUp,
+  CheckCircle2,
+  ShieldCheck,
+  MessageSquare,
 } from "lucide-react";
 
 import TopBar from "../components/TopBar";
@@ -35,7 +39,17 @@ import { useCheckout } from "../context/CheckoutContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useShopAuth } from "../hooks/useShopAuth";
 import { useGetProductByIdQuery } from "../store/api/apiSlice";
-import { api, type ProductReview } from "../api/client";
+import {
+  api,
+  type ProductReviewsResponse,
+} from "../api/client";
+import ReviewModal from "../components/review/ReviewModal";
+import {
+  resolveProductSellingUnit,
+  formatQuantityWithUnit,
+  isLifestyleCategory,
+  isDecimalAllowedForUnit,
+} from "../utils/productUnits";
 
 type DetailTab = "about" | "nutrition" | "reviews";
 
@@ -48,54 +62,69 @@ function ProductDetail() {
   const { allow, isLoggedIn } = useShopAuth();
   const [quantity, setQuantity] = useState(1);
   const [selectedVarietyIndex, setSelectedVarietyIndex] = useState(0);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DetailTab>("about");
 
   // Reviews state
-  const [reviews, setReviews] = useState<ProductReview[]>([]);
+  const [reviewsResponse, setReviewsResponse] = useState<ProductReviewsResponse | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewTitle, setReviewTitle] = useState("");
-  const [reviewBody, setReviewBody] = useState("");
-  const [reviewError, setReviewError] = useState("");
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [reviewsSort, setReviewsSort] = useState("newest");
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [editingReviewData, setEditingReviewData] = useState<any>(null);
 
   const fetchReviews = useCallback(() => {
     if (!id) return;
     setReviewsLoading(true);
     api
-      .getProductReviews(id)
-      .then(setReviews)
-      .catch(() => setReviews([]))
+      .getProductReviews(id, { sort: reviewsSort })
+      .then((res: any) => {
+        // Support array fallback for backwards compatibility or full object
+        if (Array.isArray(res)) {
+          setReviewsResponse({
+            reviews: res,
+            stats: {
+              averageRating: 4.8,
+              totalReviews: res.length,
+              distribution: { 5: { count: res.length, percentage: 100 }, 4: { count: 0, percentage: 0 }, 3: { count: 0, percentage: 0 }, 2: { count: 0, percentage: 0 }, 1: { count: 0, percentage: 0 } },
+            },
+            pagination: { total: res.length, page: 1, limit: 10, totalPages: 1 },
+          });
+        } else {
+          setReviewsResponse(res);
+        }
+      })
+      .catch(() => setReviewsResponse(null))
       .finally(() => setReviewsLoading(false));
-  }, [id]);
+  }, [id, reviewsSort]);
 
   useEffect(() => {
     if (activeTab === "reviews") fetchReviews();
   }, [activeTab, fetchReviews]);
 
-  async function handleSubmitReview(e: React.FormEvent) {
-    e.preventDefault();
-    if (!id) return;
-    setReviewError("");
-    setReviewSubmitting(true);
+  async function handleVoteHelpful(reviewId: number) {
+    if (!isLoggedIn) {
+      navigate("/login");
+      return;
+    }
     try {
-      await api.submitReview({
-        productId: id,
-        rating: reviewRating,
-        title: reviewTitle,
-        body: reviewBody,
+      const res = await api.voteReviewHelpful(reviewId);
+      setReviewsResponse((current) => {
+        if (!current) return null;
+        return {
+          ...current,
+          reviews: current.reviews.map((r) =>
+            r.id === reviewId
+              ? {
+                  ...r,
+                  helpfulCount: res.helpfulCount,
+                  userHasVotedHelpful: res.helpful,
+                }
+              : r
+          ),
+        };
       });
-      setReviewTitle("");
-      setReviewBody("");
-      setReviewRating(5);
-      setReviewSuccess(true);
-      fetchReviews();
-      setTimeout(() => setReviewSuccess(false), 3000);
     } catch (err: any) {
-      setReviewError(err.message || "Could not submit review.");
-    } finally {
-      setReviewSubmitting(false);
+      console.warn("Could not vote helpful:", err);
     }
   }
 
@@ -122,8 +151,40 @@ function ProductDetail() {
 
   useEffect(() => {
     setSelectedVarietyIndex(0);
+    setSelectedVariantId(null);
     setQuantity(1);
   }, [id]);
+
+  const productVariants = useMemo(() => {
+    if (!product) return [];
+    if (Array.isArray(product.variants) && product.variants.length > 0) {
+      return product.variants;
+    }
+    if (product.variantsJson) {
+      try {
+        const parsed = JSON.parse(product.variantsJson);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (_) {}
+    }
+    return [];
+  }, [product]);
+
+  const activeVariant = useMemo(() => {
+    if (productVariants.length === 0) return null;
+    return productVariants.find((v: any) => v.id === selectedVariantId) || productVariants[0];
+  }, [productVariants, selectedVariantId]);
+
+  const effectiveSellingUnit = useMemo(() => {
+    return resolveProductSellingUnit(
+      product?.category,
+      product?.sellingUnit,
+      product?.weight
+    );
+  }, [product]);
+
+  const isLifestyle = useMemo(() => {
+    return isLifestyleCategory(product?.category);
+  }, [product]);
 
   const varietiesList: ProductVariety[] = useMemo(() => {
     if (!product) return [];
@@ -138,7 +199,8 @@ function ProductDetail() {
     "/src/frontend/assets/images/organic-vegetables.jpg";
 
   const displayTitle = currentVariety?.title || product?.name || "";
-  const displayPrice = currentVariety?.price || product?.price || 0;
+  const displayPrice = activeVariant?.price ?? (currentVariety?.price || product?.price || 0);
+  const availableStock = activeVariant?.stock ?? (product?.stock ?? 100);
   const displayOrigin = currentVariety?.origin || product?.origin || "Nepal";
   const displaySeller = currentVariety?.seller || product?.seller || "Local Farm";
   const displayWeight = currentVariety?.weight || product?.weight || "1 kg";
@@ -147,14 +209,29 @@ function ProductDetail() {
     if (!product) return product as unknown as Product;
     return {
       ...product,
-      name: displayTitle,
+      name: activeVariant ? `${displayTitle} (${activeVariant.name})` : displayTitle,
       price: displayPrice,
+      sellingUnit: effectiveSellingUnit,
+      allowDecimals: product.allowDecimals ?? (isDecimalAllowedForUnit(effectiveSellingUnit) ? 1 : 0),
+      selectedVariant: activeVariant || undefined,
       image: product.image || currentImage,
       origin: displayOrigin,
       seller: displaySeller,
       weight: displayWeight,
+      stock: availableStock,
     };
-  }, [product, displayTitle, displayPrice, displayOrigin, displaySeller, displayWeight, currentImage]);
+  }, [
+    product,
+    displayTitle,
+    displayPrice,
+    effectiveSellingUnit,
+    activeVariant,
+    displayOrigin,
+    displaySeller,
+    displayWeight,
+    currentImage,
+    availableStock,
+  ]);
 
   if (isProductLoading) {
     return (
@@ -297,21 +374,82 @@ function ProductDetail() {
                 </span>
               </div>
 
-              {/* Price Row: Rs. 150 /kg */}
+              {/* Price Row: Category-Aware Selling Unit */}
               <div className="product-detail-price-row">
-                <span className="price-amount">Rs. {displayPrice}</span>
-                <span className="price-unit">/{displayWeight}</span>
+                <span className="price-amount">Rs. {displayPrice.toLocaleString()}</span>
+                <span className="price-unit">/ {effectiveSellingUnit}</span>
               </div>
 
-              {/* Pill Tags: Fresh, Organic, Locally Sourced */}
+              {/* Pill Tags: Category-Aware */}
               <div className="product-detail-pill-tags">
-                <span className="pill-tag">Fresh</span>
-                <span className="pill-tag">Organic</span>
-                <span className="pill-tag">Locally Sourced</span>
+                {isLifestyle ? (
+                  <>
+                    <span className="pill-tag">Handcrafted</span>
+                    <span className="pill-tag">Artisan Made</span>
+                    <span className="pill-tag">Authentic Nepali</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="pill-tag">Fresh</span>
+                    <span className="pill-tag">Organic</span>
+                    <span className="pill-tag">Locally Sourced</span>
+                  </>
+                )}
               </div>
 
               {/* Product description summary */}
               <p className="product-detail-desc">{displaySummary}</p>
+
+              {/* Product Variants (e.g. Size, Color) */}
+              {productVariants.length > 0 && (
+                <div style={{ marginTop: 14, marginBottom: 12 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>
+                    Select Option ({productVariants[0]?.optionType || "Variant"}):
+                  </span>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {productVariants.map((v: any) => {
+                      const isSelected = activeVariant?.id === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedVariantId(v.id);
+                            setQuantity(1);
+                          }}
+                          style={{
+                            padding: "6px 14px",
+                            borderRadius: 6,
+                            border: isSelected ? "2px solid #168d51" : "1px solid #d1d5db",
+                            background: isSelected ? "#edf8f0" : "#ffffff",
+                            color: isSelected ? "#0f5431" : "#374151",
+                            fontWeight: isSelected ? 700 : 500,
+                            fontSize: 13,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {v.name} {v.price ? `(Rs. ${v.price.toLocaleString()})` : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Available Stock Indicator */}
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: availableStock > 0 ? "#168d51" : "#dc2626",
+                  marginTop: 6,
+                  marginBottom: 10,
+                }}
+              >
+                {availableStock > 0
+                  ? `Available stock: ${availableStock} ${effectiveSellingUnit}${availableStock > 1 && !["kg", "g", "ml"].includes(effectiveSellingUnit) ? "s" : ""}`
+                  : "Out of stock"}
+              </div>
 
               {/* Origin & Seller Bar Card */}
               <div className="product-detail-origin-card">
@@ -338,7 +476,7 @@ function ProductDetail() {
                 </div>
               </div>
 
-              {/* Quantity Selector: − 1 kg + */}
+              {/* Quantity Selector */}
               <div className="product-detail-qty-row">
                 <span className="qty-label">Quantity</span>
                 <div className="qty-capsule">
@@ -350,16 +488,20 @@ function ProductDetail() {
                     <Minus size={13} strokeWidth={2.5} />
                   </button>
                   <span className="qty-value">
-                    {quantity} {displayWeight.toLowerCase().includes("dozen") ? "dozen" : displayWeight.toLowerCase().includes("l") && !displayWeight.toLowerCase().includes("ml") ? "L" : displayWeight.toLowerCase().includes("pack") ? "pack" : "kg"}
+                    {formatQuantityWithUnit(quantity, effectiveSellingUnit, product.category)}
                   </span>
                   <button
                     type="button"
-                    onClick={() => setQuantity((v) => v + 1)}
+                    onClick={() => setQuantity((v) => Math.min(availableStock || 999, v + 1))}
                     aria-label="Increase quantity"
                   >
                     <Plus size={13} strokeWidth={2.5} />
                   </button>
                 </div>
+
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#475569", marginLeft: 14 }}>
+                  Total: Rs. {(displayPrice * quantity).toLocaleString()}
+                </span>
               </div>
 
               {/* Action Buttons: Green Add To Cart + Orange Buy Now */}
@@ -407,14 +549,14 @@ function ProductDetail() {
                 className={`detail-tab-btn ${activeTab === "nutrition" ? "active" : ""}`}
                 onClick={() => setActiveTab("nutrition")}
               >
-                Nutritional Information
+                {isLifestyle ? "Specifications & Craft" : "Nutritional Information"}
               </button>
               <button
                 type="button"
                 className={`detail-tab-btn ${activeTab === "reviews" ? "active" : ""}`}
                 onClick={() => setActiveTab("reviews")}
               >
-                Reviews ({details.reviewCount || reviews.length || 24})
+                Reviews ({reviewsResponse?.stats?.totalReviews ?? details.reviewCount ?? 24})
               </button>
             </div>
 
@@ -454,167 +596,379 @@ function ProductDetail() {
                   </div>
                 </div>
 
-                {/* Nutritional Information (per 100g) */}
-                <div className="nutrition-summary-card">
-                  <h4 className="nutrition-summary-heading">
-                    Nutritional Information <small>(per 100g)</small>
-                  </h4>
-                  <div className="nutrition-columns-grid">
-                    <div className="nutrition-col">
-                      <div className="nut-circle" aria-hidden="true" />
-                      <div className="nut-info">
-                        <span className="nut-label">Calories</span>
-                        <strong className="nut-value">
-                          {details.calories || "52 kcal"}
-                        </strong>
+                {/* Product Specifications or Nutrition (per 100g) */}
+                {isLifestyle ? (
+                  <div className="nutrition-summary-card">
+                    <h4 className="nutrition-summary-heading">
+                      Product Specifications &amp; Material
+                    </h4>
+                    <div className="nutrition-columns-grid">
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Selling Unit</span>
+                          <strong className="nut-value">Per {effectiveSellingUnit}</strong>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="nut-divider" aria-hidden="true" />
+                      <div className="nut-divider" aria-hidden="true" />
 
-                    <div className="nutrition-col">
-                      <div className="nut-circle" aria-hidden="true" />
-                      <div className="nut-info">
-                        <span className="nut-label">Protein</span>
-                        <strong className="nut-value">
-                          {details.protein || "0.3 g"}
-                        </strong>
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Weight / Dimensions</span>
+                          <strong className="nut-value">{displayWeight || "Crafted to scale"}</strong>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="nut-divider" aria-hidden="true" />
+                      <div className="nut-divider" aria-hidden="true" />
 
-                    <div className="nutrition-col">
-                      <div className="nut-circle" aria-hidden="true" />
-                      <div className="nut-info">
-                        <span className="nut-label">Fiber</span>
-                        <strong className="nut-value">
-                          {details.fiber || "2.4 g"}
-                        </strong>
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Category</span>
+                          <strong className="nut-value">{product.category}</strong>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="nut-divider" aria-hidden="true" />
+                      <div className="nut-divider" aria-hidden="true" />
 
-                    <div className="nutrition-col">
-                      <div className="nut-circle" aria-hidden="true" />
-                      <div className="nut-info">
-                        <span className="nut-label">Vitamin C</span>
-                        <strong className="nut-value">
-                          {details.vitaminC || "4.6 mg"}
-                        </strong>
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Artisan Guild</span>
+                          <strong className="nut-value">{displaySeller}</strong>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="nutrition-summary-card">
+                    <h4 className="nutrition-summary-heading">
+                      Nutritional Information <small>(per 100g)</small>
+                    </h4>
+                    <div className="nutrition-columns-grid">
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Calories</span>
+                          <strong className="nut-value">{details.calories || "52 kcal"}</strong>
+                        </div>
+                      </div>
+
+                      <div className="nut-divider" aria-hidden="true" />
+
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Protein</span>
+                          <strong className="nut-value">{details.protein || "0.3 g"}</strong>
+                        </div>
+                      </div>
+
+                      <div className="nut-divider" aria-hidden="true" />
+
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Fiber</span>
+                          <strong className="nut-value">{details.fiber || "2.4 g"}</strong>
+                        </div>
+                      </div>
+
+                      <div className="nut-divider" aria-hidden="true" />
+
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Vitamin C</span>
+                          <strong className="nut-value">{details.vitaminC || "4.6 mg"}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Nutrition Tab View */}
+            {/* Nutrition or Specifications Tab View */}
             {activeTab === "nutrition" && (
               <div className="detail-specs-content">
-                <div className="nutrition-summary-card" style={{ marginTop: 0 }}>
-                  <h4 className="nutrition-summary-heading">
-                    Nutritional Information <small>(per 100g)</small>
-                  </h4>
-                  <div className="nutrition-columns-grid">
-                    <div className="nutrition-col">
-                      <div className="nut-circle" aria-hidden="true" />
-                      <div className="nut-info">
-                        <span className="nut-label">Calories</span>
-                        <strong className="nut-value">
-                          {details.calories || "52 kcal"}
-                        </strong>
-                      </div>
+                {isLifestyle ? (
+                  <div className="nutrition-summary-card" style={{ marginTop: 0 }}>
+                    <h4 className="nutrition-summary-heading">
+                      Artisan Craftsmanship &amp; Technical Specifications
+                    </h4>
+                    <div style={{ padding: "16px 0", color: "#475569", fontSize: 14, lineHeight: 1.6 }}>
+                      <p style={{ marginBottom: 12 }}>
+                        <strong>Authentic Craftsmanship:</strong> Handcrafted by experienced artisans using indigenous raw materials, traditional joinery, and durable finishes.
+                      </p>
+                      <p style={{ marginBottom: 12 }}>
+                        <strong>Selling &amp; Order Unit:</strong> Priced and sold <strong>per {effectiveSellingUnit}</strong>. Quantity ordered represents complete individual {effectiveSellingUnit}s.
+                      </p>
+                      <p style={{ marginBottom: 12 }}>
+                        <strong>Dimensions &amp; Physical Weight:</strong> {displayWeight || "Standard size crafted by local artisans"}.
+                      </p>
+                      <p>
+                        <strong>Care &amp; Maintenance:</strong> Wipe with a clean, dry or damp cloth. Avoid harsh abrasive cleaners to preserve the natural textures and finishes.
+                      </p>
                     </div>
-                    <div className="nut-divider" aria-hidden="true" />
-                    <div className="nutrition-col">
-                      <div className="nut-circle" aria-hidden="true" />
-                      <div className="nut-info">
-                        <span className="nut-label">Protein</span>
-                        <strong className="nut-value">
-                          {details.protein || "0.3 g"}
-                        </strong>
+                  </div>
+                ) : (
+                  <div className="nutrition-summary-card" style={{ marginTop: 0 }}>
+                    <h4 className="nutrition-summary-heading">
+                      Nutritional Information <small>(per 100g)</small>
+                    </h4>
+                    <div className="nutrition-columns-grid">
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Calories</span>
+                          <strong className="nut-value">{details.calories || "52 kcal"}</strong>
+                        </div>
                       </div>
-                    </div>
-                    <div className="nut-divider" aria-hidden="true" />
-                    <div className="nutrition-col">
-                      <div className="nut-circle" aria-hidden="true" />
-                      <div className="nut-info">
-                        <span className="nut-label">Fiber</span>
-                        <strong className="nut-value">
-                          {details.fiber || "2.4 g"}
-                        </strong>
+                      <div className="nut-divider" aria-hidden="true" />
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Protein</span>
+                          <strong className="nut-value">{details.protein || "0.3 g"}</strong>
+                        </div>
                       </div>
-                    </div>
-                    <div className="nut-divider" aria-hidden="true" />
-                    <div className="nutrition-col">
-                      <div className="nut-circle" aria-hidden="true" />
-                      <div className="nut-info">
-                        <span className="nut-label">Vitamin C</span>
-                        <strong className="nut-value">
-                          {details.vitaminC || "4.6 mg"}
-                        </strong>
+                      <div className="nut-divider" aria-hidden="true" />
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Fiber</span>
+                          <strong className="nut-value">{details.fiber || "2.4 g"}</strong>
+                        </div>
+                      </div>
+                      <div className="nut-divider" aria-hidden="true" />
+                      <div className="nutrition-col">
+                        <div className="nut-circle" aria-hidden="true" />
+                        <div className="nut-info">
+                          <span className="nut-label">Vitamin C</span>
+                          <strong className="nut-value">{details.vitaminC || "4.6 mg"}</strong>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
             {/* Reviews Tab View */}
             {activeTab === "reviews" && (
               <div className="product-reviews-panel">
-                <h2>Customer Reviews ({reviews.length})</h2>
+                <div className="reviews-panel-header">
+                  <div>
+                    <h2>Customer Ratings &amp; Reviews</h2>
+                    <p className="reviews-panel-subtitle">
+                      Verified customer feedback from real farm harvest orders
+                    </p>
+                  </div>
+                </div>
+
+                {/* Rating Breakdown Summary Card */}
+                {reviewsResponse?.stats && (
+                  <div className="review-breakdown-card">
+                    <div className="review-breakdown-score">
+                      <div className="score-big">
+                        {reviewsResponse.stats.averageRating > 0
+                          ? reviewsResponse.stats.averageRating.toFixed(1)
+                          : "4.8"}
+                      </div>
+                      <div className="score-stars">
+                        {Array.from({ length: 5 }, (_, i) => {
+                          const ratingVal =
+                            reviewsResponse.stats.averageRating > 0
+                              ? reviewsResponse.stats.averageRating
+                              : 4.8;
+                          return (
+                            <Star
+                              key={i}
+                              size={18}
+                              fill={i < Math.floor(ratingVal) ? "#f59e0b" : "none"}
+                              stroke="#f59e0b"
+                            />
+                          );
+                        })}
+                      </div>
+                      <span className="score-count">
+                        Based on {reviewsResponse.stats.totalReviews} verified ratings
+                      </span>
+                    </div>
+
+                    <div className="review-breakdown-bars">
+                      {[5, 4, 3, 2, 1].map((star) => {
+                        const dist = reviewsResponse.stats.distribution[star as 1 | 2 | 3 | 4 | 5];
+                        const count = dist?.count || 0;
+                        const pct = dist?.percentage || 0;
+                        return (
+                          <div key={star} className="rating-bar-row">
+                            <span className="rating-bar-label">{star} stars</span>
+                            <div className="rating-bar-track">
+                              <div
+                                className="rating-bar-fill"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="rating-bar-pct">{pct}%</span>
+                            <span className="rating-bar-count">({count})</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Review Eligibility & Action Banner */}
+                <div className="review-eligibility-banner">
+                  {isLoggedIn ? (
+                    reviewsResponse?.userEligibility?.isEligible ? (
+                      <div className="eligibility-box is-eligible">
+                        <div className="eligibility-content">
+                          <CheckCircle2 size={20} className="eligibility-icon success" />
+                          <div>
+                            <strong>Verified Purchase Delivered</strong>
+                            <p>
+                              You received this product on order #{reviewsResponse.userEligibility.eligibleOrderId}.
+                              Share your feedback with fellow shoppers.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="write-review-btn"
+                          onClick={() => {
+                            setEditingReviewData(null);
+                            setReviewModalOpen(true);
+                          }}
+                        >
+                          Write a Review
+                        </button>
+                      </div>
+                    ) : reviewsResponse?.userEligibility?.alreadyReviewed ? (
+                      <div className="eligibility-box is-reviewed">
+                        <div className="eligibility-content">
+                          <CheckCircle2 size={20} className="eligibility-icon success" />
+                          <div>
+                            <strong>You've reviewed this product!</strong>
+                            <p>
+                              Your verified review is published. You can edit your comments or star rating at any time.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="edit-review-btn"
+                          onClick={() => {
+                            setEditingReviewData(reviewsResponse.userEligibility?.existingReview);
+                            setReviewModalOpen(true);
+                          }}
+                        >
+                          Edit Your Review
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="eligibility-box is-ineligible">
+                        <ShieldCheck size={20} className="eligibility-icon notice" />
+                        <div>
+                          <strong>Verified Purchases Only</strong>
+                          <p>
+                            To maintain authentic ratings, reviews can only be submitted after your order containing this product has been successfully delivered.
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="eligibility-box is-guest">
+                      <ShieldCheck size={20} className="eligibility-icon notice" />
+                      <div>
+                        <strong>Have you purchased this product?</strong>
+                        <p>
+                          <Link to="/login" className="login-link">Sign in</Link> to check your delivery status and submit your verified review.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Reviews Filter & Toolbar */}
+                <div className="reviews-list-toolbar">
+                  <h3>
+                    All Reviews ({reviewsResponse?.stats.totalReviews ?? reviewsResponse?.reviews.length ?? 0})
+                  </h3>
+                  <div className="reviews-sort-wrap">
+                    <label htmlFor="reviews-sort">Sort by:</label>
+                    <select
+                      id="reviews-sort"
+                      value={reviewsSort}
+                      onChange={(e) => setReviewsSort(e.target.value)}
+                      className="reviews-sort-select"
+                    >
+                      <option value="newest">Most Recent</option>
+                      <option value="highest">Highest Rating</option>
+                      <option value="lowest">Lowest Rating</option>
+                      <option value="helpful">Most Helpful</option>
+                    </select>
+                  </div>
+                </div>
 
                 {reviewsLoading ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "#6b7280",
-                      padding: "20px 0",
-                    }}
-                  >
-                    <Loader2 size={20} className="spin" /> Loading reviews…
+                  <div className="reviews-loading-state">
+                    <Loader2 size={22} className="spin" /> Loading customer reviews...
                   </div>
-                ) : reviews.length === 0 ? (
-                  <p style={{ color: "#6b7280", marginBottom: 24 }}>
-                    No reviews yet. Be the first to review this product!
-                  </p>
+                ) : !reviewsResponse?.reviews || reviewsResponse.reviews.length === 0 ? (
+                  <div className="reviews-empty-state">
+                    <MessageSquare size={36} color="#94a3b8" />
+                    <h4>No reviews published yet</h4>
+                    <p>Be the first verified customer to share your thoughts on this harvest.</p>
+                  </div>
                 ) : (
-                  <ul className="review-list">
-                    {reviews.map((rev) => (
-                      <li key={rev.id} className="review-item">
-                        <div className="review-meta">
-                          {rev.photo ? (
-                            <img
-                              src={rev.photo}
-                              alt={rev.first_name}
-                              className="review-avatar"
-                            />
-                          ) : (
-                            <span className="review-avatar-placeholder">
-                              <UserRound size={18} />
-                            </span>
-                          )}
-                          <div>
-                            <strong>
-                              {rev.first_name} {rev.last_name}
-                            </strong>
-                            <div className="review-stars">
+                  <div className="reviews-items-container">
+                    {reviewsResponse.reviews.map((rev) => (
+                      <article key={rev.id} className="review-card-item">
+                        <div className="review-card-top">
+                          <div className="reviewer-info">
+                            {rev.photo ? (
+                              <img
+                                src={rev.photo}
+                                alt={rev.first_name || rev.author || "Reviewer"}
+                                className="reviewer-avatar"
+                              />
+                            ) : (
+                              <div className="reviewer-avatar-placeholder">
+                                {(rev.first_name?.[0] || rev.author?.[0] || "U").toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <strong className="reviewer-name">
+                                {rev.first_name
+                                  ? `${rev.first_name} ${rev.last_name || ""}`.trim()
+                                  : rev.author || "Verified Customer"}
+                              </strong>
+                              {rev.verifiedPurchase && (
+                                <span className="verified-badge">
+                                  <CheckCircle2 size={12} /> Verified Purchase
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="review-card-rating">
+                            <div className="review-stars-row">
                               {Array.from({ length: 5 }, (_, i) => (
                                 <Star
                                   key={i}
-                                  size={14}
+                                  size={15}
                                   fill={i < rev.rating ? "#f59e0b" : "none"}
                                   stroke="#f59e0b"
                                 />
                               ))}
                             </div>
-                            <span className="review-date">
-                              {new Date(rev.created_at).toLocaleDateString("en-NP", {
+                            <span className="review-post-date">
+                              {new Date(rev.created_at || rev.createdAt || Date.now()).toLocaleDateString("en-NP", {
                                 year: "numeric",
                                 month: "short",
                                 day: "numeric",
@@ -622,89 +976,79 @@ function ProductDetail() {
                             </span>
                           </div>
                         </div>
-                        {rev.title && <strong className="review-title">{rev.title}</strong>}
-                        {rev.body && <p className="review-body">{rev.body}</p>}
-                      </li>
-                    ))}
-                  </ul>
-                )}
 
-                {isLoggedIn ? (
-                  <form className="review-form" onSubmit={handleSubmitReview}>
-                    <h3>Write a review</h3>
-                    {reviewSuccess && (
-                      <p className="review-success">✅ Your review was submitted!</p>
-                    )}
-                    {reviewError && <p className="review-error">{reviewError}</p>}
+                        {rev.title && <h4 className="review-card-title">{rev.title}</h4>}
+                        <p className="review-card-body">{rev.body}</p>
 
-                    <label className="review-field">
-                      <span>Rating</span>
-                      <div className="review-star-picker">
-                        {[1, 2, 3, 4, 5].map((star) => (
+                        {/* Uploaded product images */}
+                        {Array.isArray(rev.images) && rev.images.length > 0 && (
+                          <div className="review-card-images">
+                            {rev.images.map((imgUrl, idx) => (
+                              <img
+                                key={idx}
+                                src={imgUrl}
+                                alt={`Customer upload ${idx + 1}`}
+                                className="review-thumbnail"
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Vendor Reply */}
+                        {rev.reply && (
+                          <div className="review-vendor-reply">
+                            <div className="vendor-reply-header">
+                              <span className="vendor-reply-badge">Seller Response</span>
+                              {rev.replyAt && (
+                                <small>
+                                  {new Date(rev.replyAt).toLocaleDateString("en-NP", {
+                                    month: "short",
+                                    day: "numeric",
+                                  })}
+                                </small>
+                              )}
+                            </div>
+                            <p>{rev.reply}</p>
+                          </div>
+                        )}
+
+                        {/* Helpful Actions */}
+                        <div className="review-card-actions">
                           <button
-                            key={star}
                             type="button"
-                            onClick={() => setReviewRating(star)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              cursor: "pointer",
-                              padding: 2,
-                            }}
+                            className={`helpful-btn ${rev.userHasVotedHelpful ? "has-voted" : ""}`}
+                            onClick={() => handleVoteHelpful(rev.id)}
+                            title="Mark this review as helpful"
                           >
-                            <Star
-                              size={24}
-                              fill={star <= reviewRating ? "#f59e0b" : "none"}
-                              stroke="#f59e0b"
-                            />
+                            <ThumbsUp size={14} />
+                            <span>Helpful</span>
+                            {(rev.helpfulCount || 0) > 0 && (
+                              <span className="helpful-count">({rev.helpfulCount})</span>
+                            )}
                           </button>
-                        ))}
-                      </div>
-                    </label>
-
-                    <label className="review-field">
-                      <span>Title (optional)</span>
-                      <input
-                        value={reviewTitle}
-                        onChange={(e) => setReviewTitle(e.target.value)}
-                        placeholder="e.g. Excellent quality!"
-                        maxLength={80}
-                      />
-                    </label>
-
-                    <label className="review-field">
-                      <span>Review</span>
-                      <textarea
-                        value={reviewBody}
-                        onChange={(e) => setReviewBody(e.target.value)}
-                        placeholder="Share your experience with this product..."
-                        rows={4}
-                        required
-                      />
-                    </label>
-
-                    <button
-                      type="submit"
-                      disabled={reviewSubmitting}
-                      className="submit-review-btn"
-                    >
-                      {reviewSubmitting ? "Submitting…" : "Submit Review"}
-                    </button>
-                  </form>
-                ) : (
-                  <p style={{ marginTop: 16 }}>
-                    <Link
-                      to="/login"
-                      style={{ color: "#277a4e", fontWeight: 600, textDecoration: "underline" }}
-                    >
-                      Sign in
-                    </Link>{" "}
-                    to write a review.
-                  </p>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
           </section>
+
+          {/* Review Modal for Verified Customers */}
+          {product && (
+            <ReviewModal
+              isOpen={reviewModalOpen}
+              onClose={() => setReviewModalOpen(false)}
+              productId={product.id}
+              productName={product.name}
+              productImage={product.image}
+              orderId={reviewsResponse?.userEligibility?.eligibleOrderId}
+              orderItemId={reviewsResponse?.userEligibility?.eligibleOrderItemId}
+              existingReview={editingReviewData}
+              onSuccess={fetchReviews}
+            />
+          )}
         </div>
 
         <WhyChooseUs />

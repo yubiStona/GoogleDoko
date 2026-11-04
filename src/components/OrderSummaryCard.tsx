@@ -1,5 +1,6 @@
 import type { CartItem } from "../context/CartContext";
 import { useCheckout } from "../context/CheckoutContext";
+import PromoCodeSection from "./checkout/PromoCodeSection";
 
 interface OrderSummaryCardProps {
   items: CartItem[];
@@ -25,7 +26,8 @@ function OrderSummaryCard({
   } = useCheckout();
 
   // If server calculated figures exist, prefer them; otherwise fallback to items calculation
-  const subtotal = serverSubtotal > 0 ? serverSubtotal : items.reduce(
+  const safeItems = items || [];
+  const subtotal = serverSubtotal > 0 ? serverSubtotal : safeItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
@@ -38,7 +40,7 @@ function OrderSummaryCard({
       <h2>Order Summary</h2>
 
       <div className="co-summary-items">
-        {items.map((item) => (
+        {safeItems.map((item) => (
           <div className="co-summary-item" key={item.id}>
             <img src={item.image} alt={item.name} />
             <div>
@@ -61,6 +63,10 @@ function OrderSummaryCard({
       <div className="co-summary-row">
         <span>Delivery Fee</span>
         <strong>{deliveryFee === 0 ? "FREE" : `Rs. ${deliveryFee}`}</strong>
+      </div>
+
+      <div className="co-summary-promo-wrap" style={{ margin: "14px 0", borderTop: "1px dashed #e2e8f0", borderBottom: "1px dashed #e2e8f0", padding: "12px 0" }}>
+        <PromoCodeSection />
       </div>
 
       {discount > 0 && (

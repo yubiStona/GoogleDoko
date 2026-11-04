@@ -7,6 +7,7 @@ import AccountModal from "../../components/account/AccountModal";
 import AccountShell from "../../components/account/AccountShell";
 import { useAccount } from "../../context/AccountContext";
 import type { MockAddress } from "../../data/mockAddresses";
+import { getFormErrorScrollHandler } from "../../utils/formErrorNavigation";
 
 const addressSchema = yup.object({
   label: yup.string().required("Label is required").trim(),
@@ -155,7 +156,7 @@ function AccountAddresses() {
         title={editingId ? "Edit Address" : "Add Address"}
         onClose={() => setOpen(false)}
       >
-        <form className="account-form" onSubmit={handleSubmit(onSave)} noValidate>
+        <form className="account-form" onSubmit={handleSubmit(onSave, getFormErrorScrollHandler())} noValidate>
           {(
             [
               ["label", "Label"],

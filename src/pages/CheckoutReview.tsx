@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AlertCircle } from "lucide-react";
 
 import CheckoutShell from "../components/CheckoutShell";
 import { paymentLabels, useCheckout } from "../context/CheckoutContext";
 import { useAccount } from "../context/AccountContext";
-
 import { useCart } from "../context/CartContext";
+import { scrollToElement, mapBackendErrorToField } from "../utils/formErrorNavigation";
+import {
+  resolveProductSellingUnit,
+  formatQuantityWithUnit,
+} from "../utils/productUnits";
 
 function CheckoutReview() {
   const navigate = useNavigate();
@@ -42,9 +47,25 @@ function CheckoutReview() {
   }, [items.length, navigate]);
 
   async function placeOrder() {
-    if (busy || isCalculating || calculationError) return;
-    if (!form.fullName || !form.phone || !form.street || !form.district) { navigate('/checkout'); return; }
-    setBusy(true); setError('');
+    if (busy || isCalculating) return;
+
+    if (calculationError) {
+      setError(calculationError);
+      const target = document.querySelector<HTMLElement>(".co-review-store, .co-form-card");
+      scrollToElement(target, { focusField: true });
+      return;
+    }
+
+    if (!form.fullName || !form.phone || !form.street || !form.district) {
+      navigate("/checkout", {
+        state: { error: "Please enter your complete delivery address and recipient details." },
+      });
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+
     const address = [
       form.street,
       form.area,
@@ -92,7 +113,16 @@ function CheckoutReview() {
         state: { orderId: orderId.current, order: orderPayload },
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not place order");
+      const rawMsg = err instanceof Error ? err.message : "Could not place order";
+      const { targetSelector, userMessage } = mapBackendErrorToField(rawMsg);
+      setError(userMessage);
+
+      if (targetSelector) {
+        setTimeout(() => {
+          const el = document.querySelector<HTMLElement>(targetSelector);
+          scrollToElement(el, { focusField: true });
+        }, 50);
+      }
     } finally {
       setBusy(false);
     }
@@ -122,7 +152,12 @@ function CheckoutReview() {
                     <div>
                       <strong>{item.name}</strong>
                       <small>
-                        {item.quantity} {item.weight.replace(/^\d+\s*/, "") || "kg"}
+                        {formatQuantityWithUnit(
+                          item.quantity,
+                          resolveProductSellingUnit(item.category, item.sellingUnit, item.weight),
+                          item.category
+                        )}
+                        {item.variant ? ` • Option: ${item.variant.name || item.variant}` : ""}
                       </small>
                     </div>
                     <span>Rs. {(item.price * item.quantity).toLocaleString()}</span>
@@ -172,7 +207,12 @@ function CheckoutReview() {
               <div>
                 <strong>{item.name}</strong>
                 <small>
-                  {item.quantity} {item.weight.replace(/^\d+\s*/, "") || "kg"}
+                  {formatQuantityWithUnit(
+                    item.quantity,
+                    resolveProductSellingUnit(item.category, item.sellingUnit, item.weight),
+                    item.category
+                  )}
+                  {item.variant ? ` • Option: ${item.variant.name || item.variant}` : ""}
                   {item.seller ? ` • ${item.seller}` : ""}
                 </small>
               </div>
@@ -197,7 +237,12 @@ function CheckoutReview() {
             <span>Grand Total</span>
             <strong>Rs. {total.toLocaleString()}</strong>
           </div>
-          {error && <p className="auth-error" role="alert">{error}</p>}
+          {error && (
+            <p className="auth-error" role="alert" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <AlertCircle size={15} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </p>
+          )}
           <button type="button" className="co-continue" onClick={placeOrder} disabled={busy}>
             {busy ? "Placing order…" : "Place Order"}
             <span>→</span>

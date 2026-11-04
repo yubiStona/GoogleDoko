@@ -3,6 +3,15 @@ import {
   Leaf,
   Carrot,
   ShoppingBag,
+  Sparkles,
+  Milk,
+  Shirt,
+  Wheat,
+  Droplets,
+  Armchair,
+  Home,
+  UtensilsCrossed,
+  Flower2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -20,9 +29,15 @@ const icons: Record<string, typeof Apple> = {
   spices: Leaf,
   vegetables: Carrot,
   others: ShoppingBag,
-  dairy: ShoppingBag,
-  grains: ShoppingBag,
-  honey: ShoppingBag,
+  dairy: Milk,
+  grains: Wheat,
+  honey: Droplets,
+  beauty: Sparkles,
+  fashion: Shirt,
+  furniture: Armchair,
+  home: Home,
+  kitchen: UtensilsCrossed,
+  garden: Flower2,
 };
 
 function CategoryCard({

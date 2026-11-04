@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Check, Smartphone, Wallet } from "lucide-react";
+import { Building2, Check, Smartphone, Wallet, AlertCircle } from "lucide-react";
 
 import CheckoutShell from "../components/CheckoutShell";
 import OrderSummaryCard from "../components/OrderSummaryCard";
@@ -8,6 +8,7 @@ import {
   useCheckout,
   type PaymentMethod,
 } from "../context/CheckoutContext";
+import { scrollToElement } from "../utils/formErrorNavigation";
 
 const methods: {
   id: PaymentMethod;
@@ -44,6 +45,7 @@ const methods: {
 function CheckoutPayment() {
   const navigate = useNavigate();
   const { items, paymentMethod, setPaymentMethod } = useCheckout();
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -51,13 +53,42 @@ function CheckoutPayment() {
     }
   }, [items.length, navigate]);
 
+  function handleProceedToReview() {
+    if (!paymentMethod || !methods.some((m) => m.id === paymentMethod)) {
+      setPaymentError("Please select a payment method to continue.");
+      const payList = document.querySelector<HTMLElement>(".co-pay-list");
+      scrollToElement(payList, { focusField: true });
+      return;
+    }
+
+    setPaymentError(null);
+    navigate("/checkout/review");
+  }
+
+  function handleSelectMethod(id: PaymentMethod) {
+    setPaymentError(null);
+    setPaymentMethod(id);
+  }
+
   return (
     <CheckoutShell step={2}>
       <div className="checkout-layout">
         <div className="co-main">
           <h1>Select Payment Method</h1>
 
-          <div className="co-pay-list">
+          {paymentError && (
+            <div className="co-group-error-banner" role="alert">
+              <AlertCircle size={18} />
+              <span>{paymentError}</span>
+            </div>
+          )}
+
+          <div
+            className={`co-pay-list ${paymentError ? "has-error" : ""}`}
+            aria-invalid={Boolean(paymentError)}
+            role="radiogroup"
+            aria-label="Payment Methods"
+          >
             {methods.map((method) => {
               const Icon = method.icon;
               const selected = paymentMethod === method.id;
@@ -67,7 +98,9 @@ function CheckoutPayment() {
                   type="button"
                   key={method.id}
                   className={`co-pay-card ${selected ? "selected" : ""}`}
-                  onClick={() => setPaymentMethod(method.id)}
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => handleSelectMethod(method.id)}
                 >
                   <span className="co-pay-icon">
                     <Icon size={18} />
@@ -88,7 +121,7 @@ function CheckoutPayment() {
         <OrderSummaryCard
           items={items}
           actionLabel="Review Order"
-          onAction={() => navigate("/checkout/review")}
+          onAction={handleProceedToReview}
         />
       </div>
     </CheckoutShell>
