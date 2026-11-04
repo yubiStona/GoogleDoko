@@ -3,6 +3,7 @@ import {
     CalendarDays,
     Truck,
     Eye,
+    Star,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -80,7 +81,29 @@ function OrderCard({ order }: OrderCardProps) {
             {/* Right side */}
             <div className="order-card-actions" style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-end" }}>
 
-                <div style={{ display: "flex", gap: "6px" }}>
+                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    {order.status === "Delivered" && (
+                        <Link
+                            to={`/orders/${order.id}`}
+                            className="view-details-button order-review-link"
+                            style={{
+                                background: "#fef3c7",
+                                border: "1px solid #f59e0b",
+                                color: "#b45309",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                padding: "6px 12px",
+                                borderRadius: "6px",
+                                fontSize: "0.85rem",
+                                textDecoration: "none",
+                                fontWeight: 600,
+                            }}
+                        >
+                            <Star size={13} fill="#f59e0b" color="#f59e0b" /> Review Items
+                        </Link>
+                    )}
+
                     <Link
                         to={`/orders/${order.id}/track`}
                         className="view-details-button"

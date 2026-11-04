@@ -22,6 +22,11 @@ import {
   isNepalMobile,
   isStrongPassword,
 } from "../utils/fileToDataUrl";
+import {
+  getFormErrorScrollHandler,
+  scrollToElement,
+  mapBackendErrorToField,
+} from "../utils/formErrorNavigation";
 
 const POPULAR_CITIES = [
   "Kathmandu",
@@ -146,6 +151,11 @@ function SignUpCustomer() {
     setLoading(false);
     if (result) {
       setServerError(result);
+      const { targetSelector } = mapBackendErrorToField(result);
+      setTimeout(() => {
+        const el = targetSelector ? document.querySelector<HTMLElement>(targetSelector) : document.querySelector<HTMLElement>(".auth-error");
+        if (el) scrollToElement(el, { focusField: true });
+      }, 50);
       return;
     }
     navigate("/login", {
@@ -209,7 +219,7 @@ function SignUpCustomer() {
 
         <form
           className="auth-form"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, getFormErrorScrollHandler())}
           noValidate
         >
           {/* Section 1: Personal Details */}

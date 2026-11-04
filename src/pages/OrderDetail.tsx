@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate, useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,18 +11,20 @@ import {
   Truck,
   UserRound,
   ShoppingBag,
+  Star,
 } from "lucide-react";
 
 import TopBar from "../components/TopBar";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
+import ReviewModal from "../components/review/ReviewModal";
 
 import { products } from "../data/products";
 import { useOrders } from "../context/OrdersContext";
 import { useAccount } from "../context/AccountContext";
 import { useCart } from "../context/CartContext";
 import { normalizeOrder, type NormalizedOrder } from "../utils/normalizeOrder";
-import { api, getToken } from "../api/client";
+import { api, getToken, type OrderItemReviewEligibility } from "../api/client";
 
 const trackerSteps = [
   "Ordered",
@@ -106,6 +108,31 @@ function OrderDetail() {
     localOrder ? normalizeOrder(localOrder) : null
   );
   const [searching, setSearching] = useState(!localOrder);
+  const [eligibilityList, setEligibilityList] = useState<OrderItemReviewEligibility[]>([]);
+  const [reviewModalItem, setReviewModalItem] = useState<{
+    productId: string;
+    productName: string;
+    productImage?: string;
+    orderId?: string;
+    orderItemId?: string;
+    existingReview?: { id: number; rating: number; title: string; body: string } | null;
+  } | null>(null);
+
+  const loadEligibility = useCallback(() => {
+    if (order?.id && getToken()) {
+      api.getOrderReviewEligibility(order.id)
+        .then((res) => {
+          if (Array.isArray(res)) {
+            setEligibilityList(res);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [order?.id]);
+
+  useEffect(() => {
+    loadEligibility();
+  }, [loadEligibility]);
 
   useEffect(() => {
     if (!order && id && getToken()) {
@@ -307,31 +334,119 @@ function OrderDetail() {
             <div className="od-card od-items">
               <h2>Ordered Items</h2>
 
-              {items.map((item) => (
-                <article className="od-item" key={`${item.name}-${item.origin}-${item.productId}`}>
-                  <img src={item.image} alt={item.name} />
+              {items.map((item) => {
+                const itemElig = eligibilityList.find(
+                  (e) => String(e.productId) === String(item.productId) || e.name === item.name
+                );
+                const isDelivered = itemElig ? itemElig.isDelivered : order.status === "Delivered";
+                const hasReviewed = Boolean(itemElig?.hasReviewed || itemElig?.review);
 
-                  <div className="od-item-info">
-                    <h3>{item.name}</h3>
-                    <p>
-                      <MapPin size={14} />
-                      Origin: {item.origin}
-                    </p>
-                    <p>
-                      <UserRound size={14} />
-                      Seller: {item.seller}
-                    </p>
-                    <span>
-                      {item.quantity} × Rs. {item.price}/{item.unit.replace(/^\d+\s*/, "") || "kg"}
-                    </span>
-                  </div>
+                return (
+                  <article className="od-item" key={`${item.name}-${item.origin}-${item.productId}`}>
+                    <img src={item.image} alt={item.name} />
 
-                  <div className="od-item-total">
-                    <small>Subtotal</small>
-                    <strong>Rs. {(item.price * item.quantity).toLocaleString()}</strong>
-                  </div>
-                </article>
-              ))}
+                    <div className="od-item-info">
+                      <h3>{item.name}</h3>
+                      <p>
+                        <MapPin size={14} />
+                        Origin: {item.origin}
+                      </p>
+                      <p>
+                        <UserRound size={14} />
+                        Seller: {item.seller}
+                      </p>
+                      <span>
+                        {item.quantity} × Rs. {item.price}/{item.unit.replace(/^\d+\s*/, "") || "kg"}
+                      </span>
+                    </div>
+
+                    <div className="od-item-right-col" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px" }}>
+                      <div className="od-item-total">
+                        <small>Subtotal</small>
+                        <strong>Rs. {(item.price * item.quantity).toLocaleString()}</strong>
+                      </div>
+
+                      <div className="od-item-review-action">
+                        {hasReviewed ? (
+                          <div className="od-reviewed-chip" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                            <span className="od-reviewed-badge" style={{ background: "#ecfdf5", color: "#065f46", padding: "4px 8px", borderRadius: "6px", fontSize: "0.78rem", fontWeight: 600 }}>
+                              ★ {itemElig?.review?.rating || 5} Reviewed
+                            </span>
+                            <button
+                              type="button"
+                              className="od-review-edit-btn"
+                              style={{ background: "none", border: "1px solid #d1d5db", borderRadius: "4px", padding: "3px 8px", fontSize: "0.75rem", cursor: "pointer", color: "#374151" }}
+                              onClick={() =>
+                                setReviewModalItem({
+                                  productId: String(item.productId || itemElig?.productId),
+                                  productName: item.name,
+                                  productImage: item.image,
+                                  orderId: order.id,
+                                  orderItemId: `${order.id}-${item.productId}`,
+                                  existingReview: itemElig?.review
+                                    ? {
+                                        id: itemElig.review.id,
+                                        rating: itemElig.review.rating,
+                                        title: itemElig.review.title || "",
+                                        body: itemElig.review.body || "",
+                                      }
+                                    : null,
+                                })
+                              }
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        ) : isDelivered ? (
+                          <button
+                            type="button"
+                            className="od-write-review-btn"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              background: "#0c831f",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "6px",
+                              padding: "6px 12px",
+                              fontSize: "0.8rem",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                            onClick={() =>
+                              setReviewModalItem({
+                                productId: String(item.productId || itemElig?.productId),
+                                productName: item.name,
+                                productImage: item.image,
+                                orderId: order.id,
+                                orderItemId: `${order.id}-${item.productId}`,
+                                existingReview: null,
+                              })
+                            }
+                          >
+                            <Star size={13} fill="#fbbf24" color="#fbbf24" />
+                            Write a Review
+                          </button>
+                        ) : (
+                          <span
+                            className="od-item-status-tag"
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "#6b7280",
+                              background: "#f3f4f6",
+                              padding: "3px 8px",
+                              borderRadius: "4px",
+                            }}
+                          >
+                            {itemElig?.status || order.status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
 
             <aside className="od-sidebar">
@@ -438,6 +553,22 @@ function OrderDetail() {
             </button>
           </div>
         </div>
+
+        {reviewModalItem && (
+          <ReviewModal
+            isOpen={Boolean(reviewModalItem)}
+            onClose={() => setReviewModalItem(null)}
+            productId={reviewModalItem.productId}
+            productName={reviewModalItem.productName}
+            productImage={reviewModalItem.productImage}
+            orderId={reviewModalItem.orderId}
+            orderItemId={reviewModalItem.orderItemId}
+            existingReview={reviewModalItem.existingReview}
+            onSuccess={() => {
+              loadEligibility();
+            }}
+          />
+        )}
       </main>
 
       <Footer />

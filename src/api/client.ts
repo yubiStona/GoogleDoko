@@ -96,9 +96,46 @@ export const api = {
   adminSupportStatus: (id: number, status: string) => request(`/api/admin/support/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   adminSubscribers: () => request<{ email: string; created_at: string }[]>('/api/admin/subscribers'),
   adminProductUpdate: (id: string, body: Partial<AdminProduct>) => request(`/api/admin/products/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  vendorDashboard: () => request<VendorDashboardData>("/api/vendor/dashboard"),
   vendorProducts: () => request<AdminProduct[]>('/api/vendor/products'),
-  vendorSaveProduct: (id: string | null, body: Partial<AdminProduct>) => request(id ? `/api/vendor/products/${id}` : '/api/vendor/products', { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) }),
-  vendorRemoveProduct: (id: string) => request(`/api/vendor/products/${id}`, { method: 'DELETE' }),
+  vendorProductById: (id: string) => request<AdminProduct>(`/api/vendor/products/${id}`),
+  vendorSaveProduct: (id: string | null, body: Partial<AdminProduct>) => request<{ id: string }>(id ? `/api/vendor/products/${id}` : '/api/vendor/products', { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) }),
+  vendorRemoveProduct: (id: string) => request<{ ok: boolean }>(`/api/vendor/products/${id}`, { method: 'DELETE' }),
+  vendorOrders: () => request<VendorOrder[]>("/api/vendor/orders"),
+  vendorUpdateOrderStatus: (orderId: string, status: string) => request<{ ok: boolean; status?: string; paymentStatus?: string }>(`/api/vendor/orders/${orderId}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  vendorSales: () => request<VendorSalesData>("/api/vendor/sales"),
+  vendorReports: (range = "30days") => request<VendorReportsData>(`/api/vendor/reports?range=${encodeURIComponent(range)}`),
+  vendorCustomers: () => request<VendorCustomer[]>("/api/vendor/customers"),
+  vendorReviews: () => request<VendorReviewsData>("/api/vendor/reviews"),
+  vendorReplyReview: (id: number, reply: string) => request<{ id: number; reply: string; replyAt?: string }>(`/api/vendor/reviews/${id}/reply`, { method: "POST", body: JSON.stringify({ reply }) }),
+  vendorNotifications: () => request<VendorNotification[]>("/api/vendor/notifications"),
+  vendorProfile: () => request<VendorProfileData>("/api/vendor/profile"),
+  vendorUpdateProfile: (body: any) => request<VendorProfileData>("/api/vendor/profile", { method: "PUT", body: JSON.stringify(body) }),
+  vendorUploadAvatar: (file: File) => {
+    const form = new FormData();
+    form.append("image", file);
+    return request<VendorProfileData>("/api/vendor/profile/avatar", { method: "POST", body: form });
+  },
+  vendorDeleteAvatar: () =>
+    request<VendorProfileData>("/api/vendor/profile/avatar", { method: "DELETE" }),
+  vendorUploadStoreLogo: (file: File) => {
+    const form = new FormData();
+    form.append("image", file);
+    return request<VendorProfileData>("/api/vendor/profile/store-logo", { method: "POST", body: form });
+  },
+  vendorDeleteStoreLogo: () =>
+    request<VendorProfileData>("/api/vendor/profile/store-logo", { method: "DELETE" }),
+  vendorUploadStoreBanner: (file: File) => {
+    const form = new FormData();
+    form.append("image", file);
+    return request<VendorProfileData>("/api/vendor/profile/store-banner", { method: "POST", body: form });
+  },
+  vendorDeleteStoreBanner: () =>
+    request<VendorProfileData>("/api/vendor/profile/store-banner", { method: "DELETE" }),
+  vendorChangePassword: (body: { currentPassword: string; newPassword: string; confirmPassword?: string }) =>
+    request<{ ok: boolean; message: string }>("/api/vendor/profile/password", { method: "PUT", body: JSON.stringify(body) }),
+  vendorSettings: () => request<VendorSettingsData>("/api/vendor/settings"),
+  vendorUpdateSettings: (body: any) => request<VendorSettingsData>("/api/vendor/settings", { method: "PUT", body: JSON.stringify(body) }),
   health: () => request<{ ok: boolean }>("/api/health"),
   login: (body: { identifier: string; password: string; expectedRole?: string }) =>
     request<SessionPayload>("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
@@ -192,9 +229,35 @@ export const api = {
   removeFromWishlist: (productId: string) => request<{ ok: boolean }>(`/api/wishlist/${productId}`, { method: "DELETE" }),
 
   // Product Reviews
-  getProductReviews: (productId: string) => request<ProductReview[]>(`/api/products/${productId}/reviews`),
-  submitReview: (body: { productId: string; rating: number; title: string; body: string }) =>
-    request<ProductReview>("/api/reviews", { method: "POST", body: JSON.stringify(body) }),
+  getProductReviews: (productId: string, params: { sort?: string; page?: number; limit?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.sort) qs.set("sort", params.sort);
+    if (params.page) qs.set("page", String(params.page));
+    if (params.limit) qs.set("limit", String(params.limit));
+    const query = qs.toString();
+    return request<ProductReviewsResponse>(`/api/products/${productId}/reviews${query ? `?${query}` : ""}`);
+  },
+  checkReviewEligibility: (productId: string) =>
+    request<UserReviewEligibility>(`/api/reviews/eligibility?productId=${encodeURIComponent(productId)}`),
+  getOrderReviewEligibility: (orderId: string) =>
+    request<OrderItemReviewEligibility[]>(`/api/orders/${encodeURIComponent(orderId)}/review-eligibility`),
+  submitReview: (body: {
+    productId: string;
+    rating: number;
+    title?: string;
+    body: string;
+    orderId?: string;
+    orderItemId?: string;
+    images?: string[];
+  }) => request<ProductReview>("/api/reviews", { method: "POST", body: JSON.stringify(body) }),
+  updateReview: (
+    id: number,
+    body: { rating?: number; title?: string; body?: string; images?: string[] }
+  ) => request<ProductReview>(`/api/reviews/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteReview: (id: number) => request<{ ok: boolean }>(`/api/reviews/${id}`, { method: "DELETE" }),
+  voteReviewHelpful: (id: number) =>
+    request<{ helpful: boolean; helpfulCount: number }>(`/api/reviews/${id}/helpful`, { method: "POST" }),
+  getMyReviews: () => request<MyReviewItem[]>("/api/reviews/my-reviews"),
 
   // Image Upload
   uploadImage: (file: File) => {
@@ -206,6 +269,7 @@ export const api = {
   // Admin reviews
   adminReviews: () => request<AdminReview[]>("/api/admin/reviews"),
   adminDeleteReview: (id: number) => request<{ ok: boolean }>(`/api/admin/reviews/${id}`, { method: "DELETE" }),
+  adminReviewStatus: (id: number, status: string) => request<{ ok: boolean }>(`/api/admin/reviews/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
 
   // Cart (DB-persisted)
   getCart: () => request<CartItem[]>("/api/cart"),
@@ -266,10 +330,75 @@ export const api = {
   // Places
   places: () => request<ApiPlace[]>("/api/places"),
   placeById: (id: string) =>
-    request<{ place: ApiPlace; products: AdminProduct[] }>(`/api/places/${encodeURIComponent(id)}`),
+    request<ApiPlace>(`/api/places/${encodeURIComponent(id)}`),
+  placeBySlug: (slug: string) =>
+    request<ApiPlace>(`/api/places/${encodeURIComponent(slug)}`),
+  placeCategories: (slug: string) =>
+    request<PlaceCategorySummary[]>(`/api/places/${encodeURIComponent(slug)}/categories`),
+  placeProducts: (
+    slug: string,
+    params: {
+      search?: string;
+      category?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      sort?: string;
+      page?: number;
+      limit?: number;
+    } = {}
+  ) => {
+    const searchParams = new URLSearchParams();
+    if (params.search) searchParams.set("search", params.search);
+    if (params.category) searchParams.set("category", params.category);
+    if (params.minPrice !== undefined) searchParams.set("minPrice", String(params.minPrice));
+    if (params.maxPrice !== undefined) searchParams.set("maxPrice", String(params.maxPrice));
+    if (params.sort) searchParams.set("sort", params.sort);
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.limit) searchParams.set("limit", String(params.limit));
+    const qs = searchParams.toString();
+    return request<PlaceProductsResponse>(`/api/places/${encodeURIComponent(slug)}/products${qs ? `?${qs}` : ""}`);
+  },
+  placePopularProducts: (slug: string, limit = 4) =>
+    request<AdminProduct[]>(`/api/places/${encodeURIComponent(slug)}/popular-products?limit=${limit}`),
 
-  // Vendor Orders
-  vendorOrders: () => request<AdminOrder[]>("/api/vendor/orders"),
+  // Lifestyle Collections
+  lifestyles: () => request<LifestyleCollection[]>("/api/lifestyles"),
+  lifestyleBySlug: (slug: string) => request<LifestyleCollection>(`/api/lifestyles/${encodeURIComponent(slug)}`),
+  lifestyleProducts: (
+    slug: string,
+    params: {
+      search?: string;
+      subcategory?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      sort?: string;
+      page?: number;
+      limit?: number;
+    } = {}
+  ) => {
+    const searchParams = new URLSearchParams();
+    if (params.search) searchParams.set("search", params.search);
+    if (params.subcategory) searchParams.set("subcategory", params.subcategory);
+    if (params.minPrice !== undefined) searchParams.set("minPrice", String(params.minPrice));
+    if (params.maxPrice !== undefined) searchParams.set("maxPrice", String(params.maxPrice));
+    if (params.sort) searchParams.set("sort", params.sort);
+    if (params.page !== undefined) searchParams.set("page", String(params.page));
+    if (params.limit !== undefined) searchParams.set("limit", String(params.limit));
+    const qs = searchParams.toString();
+    return request<LifestyleProductsResponse>(
+      `/api/lifestyles/${encodeURIComponent(slug)}/products${qs ? `?${qs}` : ""}`
+    );
+  },
+  adminLifestyles: () => request<LifestyleCollection[]>("/api/admin/lifestyles"),
+  adminSaveLifestyle: (id: string | null, body: Partial<LifestyleCollection>) =>
+    request<LifestyleCollection>(id ? `/api/admin/lifestyles/${id}` : "/api/admin/lifestyles", {
+      method: id ? "PUT" : "POST",
+      body: JSON.stringify(body),
+    }),
+  adminToggleLifestyle: (id: string) =>
+    request<LifestyleCollection>(`/api/admin/lifestyles/${id}/status`, { method: "PATCH" }),
+  adminDeleteLifestyle: (id: string) =>
+    request<{ ok: boolean }>(`/api/admin/lifestyles/${id}`, { method: "DELETE" }),
 
   // Order Tracking
   trackOrder: (id: string) => request<ApiOrderTracking>(`/api/orders/${encodeURIComponent(id)}/track`),
@@ -302,11 +431,50 @@ export interface ApiPlace {
   id: string;
   name: string;
   origin: string;
-  district: string;
-  productsCount: number;
-  totalSold: number;
+  district?: string;
+  productsCount?: number;
+  itemCount: number;
+  totalSold?: number;
+  soldCount: number;
   image: string;
   description: string;
+  activeCategoriesCount?: number;
+}
+
+export interface PlaceCategorySummary {
+  id: string;
+  name: string;
+  productCount: number;
+}
+
+export interface PlaceProductsResponse {
+  products: AdminProduct[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface LifestyleCollection {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  image: string;
+  icon: string;
+  subcategories: string[];
+  displayOrder: number;
+  isActive: number;
+  productCount: number;
+}
+
+export interface LifestyleProductsResponse {
+  collection: LifestyleCollection;
+  products: AdminProduct[];
+  total: number;
+  page: number;
+  totalPages: number;
+  subcategories: string[];
 }
 
 export interface ApiOrderTracking {
@@ -450,19 +618,100 @@ export interface AdminProduct {
   stock: number;
   origin: string;
   seller: string;
+  lifestyleIds?: string[];
+  subcategory?: string | null;
+}
+
+export interface ReviewRatingStats {
+  averageRating: number;
+  totalReviews: number;
+  distribution: {
+    5: { count: number; percentage: number };
+    4: { count: number; percentage: number };
+    3: { count: number; percentage: number };
+    2: { count: number; percentage: number };
+    1: { count: number; percentage: number };
+  };
+}
+
+export interface UserReviewEligibility {
+  isEligible: boolean;
+  alreadyReviewed: boolean;
+  eligibleOrderId?: string;
+  eligibleOrderItemId?: string;
+  existingReview?: any;
+  reason?: string;
 }
 
 export interface ProductReview {
   id: number;
-  product_id: string;
-  user_id: number;
+  productId?: string;
+  product_id?: string;
+  userId?: number;
+  user_id?: number;
+  author?: string;
+  first_name?: string;
+  last_name?: string;
+  photo?: string;
   rating: number;
   title: string;
   body: string;
+  verifiedPurchase?: boolean;
+  verified_purchase?: boolean;
+  orderId?: string;
+  order_id?: string;
+  status?: string;
+  helpfulCount?: number;
+  helpful_count?: number;
+  userHasVotedHelpful?: boolean;
+  images?: string[];
+  reply?: string | null;
+  replyAt?: string | null;
   created_at: string;
-  first_name: string;
-  last_name: string;
-  photo: string;
+  createdAt?: string;
+}
+
+export interface ProductReviewsResponse {
+  reviews: ProductReview[];
+  stats: ReviewRatingStats;
+  userEligibility?: UserReviewEligibility;
+  pagination: { total: number; page: number; limit: number; totalPages: number };
+}
+
+export interface MyReviewItem {
+  id: number;
+  productId: string;
+  productName: string;
+  productImage: string;
+  orderId?: string;
+  rating: number;
+  title: string;
+  body: string;
+  status: string;
+  helpfulCount: number;
+  images: string[];
+  reply?: string | null;
+  replyAt?: string | null;
+  createdAt: string;
+}
+
+export interface OrderItemReviewEligibility {
+  productId: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+  status: string;
+  isDelivered: boolean;
+  isEligible: boolean;
+  hasReviewed: boolean;
+  review?: {
+    id: number;
+    rating: number;
+    title: string;
+    body: string;
+    createdAt: string;
+  } | null;
 }
 
 export interface AdminReview {
@@ -472,6 +721,7 @@ export interface AdminReview {
   rating: number;
   title: string;
   body: string;
+  status?: string;
   created_at: string;
   first_name: string;
   last_name: string;
@@ -484,6 +734,10 @@ export interface CartItem {
   id: string;
   name: string;
   weight: string;
+  sellingUnit?: string;
+  allowDecimals?: number;
+  variant?: any;
+  category?: string;
   price: number;
   quantity: number;
   image: string;
@@ -562,4 +816,222 @@ export interface CheckoutCalculation {
   freeDeliveryThreshold?: number;
   message?: string;
 }
+
+export interface VendorDashboardData {
+  stats: {
+    totalRevenue: number;
+    totalOrders: number;
+    pendingOrders: number;
+    activeProducts: number;
+    lowStockProducts: number;
+    averageRating: string | number;
+    ratingCount: number;
+  };
+  chart: { date: string; label: string; revenue: number; orders: number }[];
+  bestsellers: {
+    id: string;
+    name: string;
+    place: string;
+    sold: string;
+    soldCount: number;
+    revenue: number;
+    image: string;
+    price: number;
+    stock: number;
+  }[];
+  recentOrders: VendorOrder[];
+  vendorStatus: string;
+}
+
+export interface VendorOrder {
+  id: string;
+  date: string;
+  status: string;
+  orderStatus?: string;
+  total: number;
+  subtotal: number;
+  paymentMethod: string;
+  paymentStatus: string;
+  deliveryAddress: string;
+  recipientName: string;
+  recipientPhone: string;
+  items: {
+    productId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    weight?: string;
+    image?: string;
+    seller?: string;
+    status?: string;
+  }[];
+  createdAt?: string;
+}
+
+export interface VendorSalesData {
+  todaySales?: number;
+  weeklySales?: number;
+  monthlySales?: number;
+  completedOrders?: number;
+  pendingPayout?: number;
+  metrics?: {
+    todaySales: number;
+    weeklySales: number;
+    monthlySales: number;
+    totalSales: number;
+    completedOrders: number;
+    pendingPayments: number;
+    totalOrders: number;
+  };
+  transactions: {
+    id: string;
+    date: string;
+    customer: string;
+    phone?: string;
+    items?: string;
+    itemsCount?: number;
+    amount: number;
+    status: string;
+    payment?: string;
+    paymentMethod?: string;
+    paymentStatus?: string;
+  }[];
+}
+
+export interface VendorReportsData {
+  range: string;
+  grossRevenue?: number;
+  netRevenue?: number;
+  totalOrders?: number;
+  completedOrders?: number;
+  avgOrderValue?: number;
+  metrics?: {
+    grossRevenue: number;
+    netRevenue: number;
+    totalOrders: number;
+    completedOrders: number;
+    avgOrderValue: number;
+  };
+  bars?: {
+    day: string;
+    height: number;
+    amount?: number;
+    orders?: number;
+  }[];
+  categories: {
+    name: string;
+    sales?: number;
+    share?: string;
+    amount?: string;
+    width?: string;
+    color?: string;
+    percentage?: number;
+    count?: number;
+  }[];
+  statusCounts?: Record<string, number>;
+  transactions?: {
+    id: string;
+    customer: string;
+    date: string;
+    amount: string;
+    status: string;
+  }[];
+  productsCount?: number;
+}
+
+export interface VendorCustomer {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  location: string;
+  orders?: number;
+  ordersCount: number;
+  spent?: number;
+  totalSpent: number;
+  lastOrder?: string;
+  lastOrderDate: string;
+  status: string;
+}
+
+export interface VendorReviewItem {
+  id: number;
+  productId: string;
+  productName: string;
+  product?: string;
+  productImage: string;
+  reviewerName: string;
+  customer?: string;
+  email?: string;
+  rating: number;
+  title: string;
+  body: string;
+  comment?: string;
+  status?: string;
+  reply: string | null;
+  replyAt: string | null;
+  date?: string;
+  createdAt?: string;
+}
+
+export interface VendorReviewsData {
+  reviews: VendorReviewItem[];
+  averageRating: number;
+  totalReviews: number;
+  pendingReplies?: number;
+  fiveStarShare?: number;
+  ratingBreakdown?: Record<number, number>;
+}
+
+export interface VendorNotification {
+  id: string;
+  text: string;
+  to: string;
+  type: string;
+}
+
+export interface VendorProfileData {
+  userId: number;
+  businessName: string;
+  vendorType: string;
+  location: string;
+  district: string;
+  address: string;
+  category: string;
+  mainProducts?: string;
+  description?: string;
+  photo?: string;
+  profileImage?: string;
+  storeLogo?: string;
+  storeBanner?: string;
+  storeEmail?: string;
+  storePhone?: string;
+  storeHours?: string;
+  storeSocials?: {
+    website?: string;
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+  };
+  documentName?: string;
+  status: string;
+  contact: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+}
+
+export interface VendorSettingsData {
+  orderAlerts: boolean;
+  lowStockAlerts: boolean;
+  reviewAlerts: boolean;
+  emailNotifications: boolean;
+  vacationMode: boolean;
+  payoutMethod?: string;
+  accountNumber?: string;
+  bankName?: string;
+}
+
 

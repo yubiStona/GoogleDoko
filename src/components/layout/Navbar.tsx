@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Compass,
   Package,
+  Sparkles,
 } from "lucide-react";
 
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -31,7 +32,7 @@ function Navbar() {
   const [searchParams] = useSearchParams();
   const { cartItems } = useCart();
   const { isLoggedIn, user, logout } = useAccount();
-  const userPhoto = user.photo || user.vendor?.photo || "";
+  const userPhoto = user.photo || "";
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
@@ -75,7 +76,8 @@ function Navbar() {
 
   const categoriesActive =
     location.pathname.startsWith("/categories") ||
-    location.pathname === "/places";
+    location.pathname.startsWith("/places") ||
+    location.pathname.startsWith("/lifestyle");
 
   useEffect(() => {
     if (location.pathname === "/search") {
@@ -257,19 +259,6 @@ function Navbar() {
               >
                 <div className="nav-dropdown-panel">
                   <NavLink
-                    to="/places"
-                    className={({ isActive }) => (isActive ? "active" : "")}
-                    onClick={() => {
-                      setCategoriesOpen(false);
-                      if (categoriesTimeoutRef.current) {
-                        clearTimeout(categoriesTimeoutRef.current);
-                      }
-                    }}
-                  >
-                    <MapPin size={16} className="nav-dropdown-item-icon" />
-                    <span>Explore by Places</span>
-                  </NavLink>
-                  <NavLink
                     to="/categories"
                     className={({ isActive }) => (isActive ? "active" : "")}
                     onClick={() => {
@@ -280,7 +269,33 @@ function Navbar() {
                     }}
                   >
                     <LayoutGrid size={16} className="nav-dropdown-item-icon" />
-                    <span>Categories by Product</span>
+                    <span>Shop by Product</span>
+                  </NavLink>
+                  <NavLink
+                    to="/places"
+                    className={({ isActive }) => (isActive ? "active" : "")}
+                    onClick={() => {
+                      setCategoriesOpen(false);
+                      if (categoriesTimeoutRef.current) {
+                        clearTimeout(categoriesTimeoutRef.current);
+                      }
+                    }}
+                  >
+                    <MapPin size={16} className="nav-dropdown-item-icon" />
+                    <span>Shop by Place</span>
+                  </NavLink>
+                  <NavLink
+                    to="/lifestyle"
+                    className={({ isActive }) => (isActive ? "active" : "")}
+                    onClick={() => {
+                      setCategoriesOpen(false);
+                      if (categoriesTimeoutRef.current) {
+                        clearTimeout(categoriesTimeoutRef.current);
+                      }
+                    }}
+                  >
+                    <Sparkles size={16} className="nav-dropdown-item-icon" />
+                    <span>Shop by Lifestyle</span>
                   </NavLink>
                 </div>
               </div>
@@ -484,11 +499,15 @@ function Navbar() {
           </NavLink>
           <NavLink to="/categories" onClick={closeMenu}>
             <LayoutGrid size={18} />
-            Categories
+            Shop by Product
           </NavLink>
           <NavLink to="/places" onClick={closeMenu}>
             <Compass size={18} />
-            Explore Places
+            Shop by Place
+          </NavLink>
+          <NavLink to="/lifestyle" onClick={closeMenu}>
+            <Sparkles size={18} />
+            Shop by Lifestyle
           </NavLink>
           <NavLink to="/orders" onClick={closeMenu}>
             <Package size={18} />

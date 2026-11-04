@@ -60,6 +60,11 @@ import AuthPasswordField from "../../components/auth/AuthPasswordField";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { getFormErrorScrollHandler } from "../../utils/formErrorNavigation";
+import {
+  getAllowedUnitsForCategory,
+  resolveProductSellingUnit,
+} from "../../utils/productUnits";
 
 const PRODUCT_CATEGORIES = [
   "Fresh Vegetables",
@@ -67,8 +72,14 @@ const PRODUCT_CATEGORIES = [
   "Dairy & Eggs",
   "Local Grains & Rice",
   "Traditional Spices & Herbs",
-  "Himalayan Tea & Coffee",
   "Honey & Preserves",
+  "Furniture",
+  "Home & Living",
+  "Kitchen & Dining",
+  "Fashion & Accessories",
+  "Garden & Outdoor",
+  "Beauty & Personal Care",
+  "Himalayan Tea & Coffee",
   "Bakery & Sweets",
   "Others",
 ];
@@ -1502,7 +1513,12 @@ export function AdminProducts() {
                     </div>
                     <div>
                       <strong>{product.name}</strong>
-                      <div><small>{product.weight || "1 unit"}</small></div>
+                      <div>
+                        <small>
+                          Sold per {resolveProductSellingUnit(product.category, (product as any).sellingUnit, product.weight)}
+                          {product.weight ? ` • ${product.weight}` : ""}
+                        </small>
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -1514,7 +1530,9 @@ export function AdminProducts() {
                 </td>
                 <td>{product.seller || "GoogleDoko Store"}</td>
                 <td>
-                  <strong style={{ color: "#168d51", fontSize: 14 }}>Rs. {product.price}</strong>
+                  <strong style={{ color: "#168d51", fontSize: 14 }}>
+                    Rs. {product.price} / {resolveProductSellingUnit(product.category, (product as any).sellingUnit, product.weight)}
+                  </strong>
                 </td>
                 <td>
                   <span className={product.stock > 10 ? "ad-badge-success" : product.stock > 0 ? "ad-badge-pending" : "ad-badge-danger"}>
@@ -1642,12 +1660,25 @@ export function AdminProducts() {
                   </label>
 
                   <label className="auth-field">
-                    <span>Unit / Weight *</span>
+                    <span>Selling Unit *</span>
+                    <select
+                      value={(activeProduct as any).sellingUnit || resolveProductSellingUnit(activeProduct.category, undefined, activeProduct.weight)}
+                      onChange={(e) => setActiveProduct({ ...activeProduct, sellingUnit: e.target.value } as any)}
+                    >
+                      {getAllowedUnitsForCategory(activeProduct.category).map((u) => (
+                        <option key={u} value={u}>
+                          Per {u} ({u.charAt(0).toUpperCase() + u.slice(1)})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="auth-field">
+                    <span>Physical Weight / Dimensions (Optional)</span>
                     <input
-                      required
                       value={activeProduct.weight || ""}
                       onChange={(e) => setActiveProduct({ ...activeProduct, weight: e.target.value })}
-                      placeholder="e.g. 1 kg, 500g, 1 bunch, 1 bottle"
+                      placeholder="e.g. 1 kg, 35 kg net, 120x80 cm"
                     />
                   </label>
 
@@ -1814,6 +1845,15 @@ export function AdminReviews() {
       showToast("Review deleted and product rating updated");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to delete review");
+    }
+  }
+
+  async function handleStatusChange(review: AdminReview, nextStatus: string) {
+    try {
+      await state.mutate(() => api.adminReviewStatus(review.id, nextStatus));
+      showToast(`Review marked as ${nextStatus}`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to update review status");
     }
   }
 
@@ -2033,18 +2073,56 @@ export function AdminReviews() {
                   </p>
                 </td>
                 <td style={{ whiteSpace: "nowrap", fontSize: 12, color: "#64748b" }}>
-                  {new Date(rev.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                  <div>{new Date(rev.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</div>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      marginTop: 4,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      background: rev.status === "approved" || !rev.status ? "#ecfdf5" : rev.status === "rejected" ? "#fef2f2" : "#fefce8",
+                      color: rev.status === "approved" || !rev.status ? "#065f46" : rev.status === "rejected" ? "#991b1b" : "#854d0e",
+                    }}
+                  >
+                    {(rev.status || "approved").toUpperCase()}
+                  </span>
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    className="auth-btn ghost"
-                    style={{ padding: "6px 10px", fontSize: 12, width: "auto", color: "#c44545", borderColor: "#fecaca" }}
-                    onClick={() => handleDelete(rev)}
-                    title="Delete inappropriate review"
-                  >
-                    <Trash2 size={13} /> Delete
-                  </button>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {rev.status !== "approved" && (
+                      <button
+                        type="button"
+                        className="auth-btn ghost"
+                        style={{ padding: "4px 8px", fontSize: 11, width: "auto", color: "#059669", borderColor: "#a7f3d0" }}
+                        onClick={() => handleStatusChange(rev, "approved")}
+                        title="Approve review"
+                      >
+                        Approve
+                      </button>
+                    )}
+                    {rev.status !== "rejected" && (
+                      <button
+                        type="button"
+                        className="auth-btn ghost"
+                        style={{ padding: "4px 8px", fontSize: 11, width: "auto", color: "#d97706", borderColor: "#fde68a" }}
+                        onClick={() => handleStatusChange(rev, "rejected")}
+                        title="Hide/Reject review"
+                      >
+                        Reject
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="auth-btn ghost"
+                      style={{ padding: "4px 8px", fontSize: 11, width: "auto", color: "#c44545", borderColor: "#fecaca" }}
+                      onClick={() => handleDelete(rev)}
+                      title="Delete inappropriate review"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -3385,7 +3463,7 @@ export function AdminCoupons() {
                 <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleCouponSubmit(onCouponSubmit)} noValidate>
+            <form onSubmit={handleCouponSubmit(onCouponSubmit, getFormErrorScrollHandler())} noValidate>
               <div className="ad-modal-body">
                 <div style={{ display: "grid", gap: 14 }}>
                   <label className="auth-field">
@@ -3567,7 +3645,7 @@ export function AdminSettings() {
 
       {state.error && <p className="auth-error">{state.error}</p>}
 
-      <form onSubmit={handleSettingsSubmit(onSaveSettings)} noValidate style={{ display: "grid", gap: 20 }}>
+      <form onSubmit={handleSettingsSubmit(onSaveSettings, getFormErrorScrollHandler())} noValidate style={{ display: "grid", gap: 20 }}>
         {/* Logistics & Economics */}
         <div className="vd-card auth-form">
           <h2 style={{ fontSize: 17, margin: "0 0 16px", display: "flex", alignItems: "center", gap: 8, color: "#168d51" }}>
@@ -3707,6 +3785,465 @@ export function AdminSettings() {
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+
+// ==========================================
+// 12. LIFESTYLE COLLECTIONS MANAGEMENT
+// ==========================================
+export function AdminLifestyles() {
+  const [collections, setCollections] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCol, setEditingCol] = useState<any | null>(null);
+  const [saving, setSaving] = useState(false);
+  const { showToast } = useAccount();
+
+  // Modal form fields
+  const [formName, setFormName] = useState("");
+  const [formSlug, setFormSlug] = useState("");
+  const [formDesc, setFormDesc] = useState("");
+  const [formImage, setFormImage] = useState("");
+  const [formIcon, setFormIcon] = useState("");
+  const [formSubcats, setFormSubcats] = useState("");
+  const [formOrder, setFormOrder] = useState("0");
+  const [formActive, setFormActive] = useState(1);
+
+  const loadCollections = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.adminLifestyles();
+      setCollections(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      console.error("Failed to load lifestyles:", err);
+      showToast(err.message || "Failed to load lifestyle collections");
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    loadCollections();
+  }, [loadCollections]);
+
+  function openCreateModal() {
+    setEditingCol(null);
+    setFormName("");
+    setFormSlug("");
+    setFormDesc("");
+    setFormImage("");
+    setFormIcon("");
+    setFormSubcats("");
+    setFormOrder(String(collections.length + 1));
+    setFormActive(1);
+    setModalOpen(true);
+  }
+
+  function openEditModal(col: any) {
+    setEditingCol(col);
+    setFormName(col.name || "");
+    setFormSlug(col.slug || "");
+    setFormDesc(col.description || "");
+    setFormImage(col.image || "");
+    setFormIcon(col.icon || "");
+    setFormSubcats(Array.isArray(col.subcategories) ? col.subcategories.join(", ") : "");
+    setFormOrder(String(col.displayOrder ?? 0));
+    setFormActive(col.isActive ?? 1);
+    setModalOpen(true);
+  }
+
+  async function handleToggleStatus(col: any) {
+    try {
+      await api.adminToggleLifestyle(col.id);
+      showToast(`Collection "${col.name}" status updated`);
+      loadCollections();
+    } catch (err: any) {
+      showToast(err.message || "Failed to toggle collection status");
+    }
+  }
+
+  async function handleDelete(col: any) {
+    if (!window.confirm(`Are you sure you want to delete "${col.name}"? Products mapped to this collection will have their mapping removed.`)) {
+      return;
+    }
+    try {
+      await api.adminDeleteLifestyle(col.id);
+      showToast(`Collection "${col.name}" deleted`);
+      loadCollections();
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete collection");
+    }
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!formName.trim()) {
+      showToast("Please enter a collection name");
+      return;
+    }
+
+    setSaving(true);
+    const subcategories = formSubcats
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const payload = {
+      name: formName.trim(),
+      slug: formSlug.trim() || undefined,
+      description: formDesc.trim(),
+      image: formImage.trim(),
+      icon: formIcon.trim(),
+      subcategories,
+      displayOrder: parseInt(formOrder, 10) || 0,
+      isActive: formActive,
+    };
+
+    try {
+      await api.adminSaveLifestyle(editingCol ? editingCol.id : null, payload);
+      showToast(editingCol ? "Collection updated successfully" : "Collection created successfully");
+      setModalOpen(false);
+      loadCollections();
+    } catch (err: any) {
+      showToast(err.message || "Failed to save collection");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="vd-content-wrap">
+      <div className="vd-products-head" style={{ marginBottom: 24 }}>
+        <div>
+          <h1 style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Sparkles size={26} color="#168d51" /> Shop by Lifestyle Collections
+          </h1>
+          <p>
+            Manage public lifestyle collections, featured photography, subcategories, and active statuses.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            type="button"
+            className="vd-add-btn"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            onClick={openCreateModal}
+          >
+            <Plus size={16} /> Add New Collection
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ padding: 48, textAlign: "center", color: "#6b7280" }}>
+          Loading lifestyle collections...
+        </div>
+      ) : collections.length === 0 ? (
+        <div className="vd-card" style={{ padding: 48, textAlign: "center" }}>
+          <Sparkles size={40} color="#168d51" style={{ margin: "0 auto 12px" }} />
+          <h3>No Collections Configured</h3>
+          <p style={{ color: "#6b7280", marginBottom: 16 }}>
+            Create your first lifestyle collection to feature on the website.
+          </p>
+          <button type="button" className="vd-add-btn" onClick={openCreateModal}>
+            <Plus size={16} /> Create Collection
+          </button>
+        </div>
+      ) : (
+        <div className="vd-table-wrap">
+          <table className="vd-table">
+            <thead>
+              <tr>
+                <th style={{ width: 80 }}>Cover</th>
+                <th>Collection Name</th>
+                <th>Slug</th>
+                <th>Subcategories</th>
+                <th style={{ textAlign: "center" }}>Products</th>
+                <th style={{ textAlign: "center" }}>Order</th>
+                <th style={{ textAlign: "center" }}>Status</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {collections.map((col) => {
+                const subcats = col.subcategories || [];
+                const isActive = col.isActive === 1;
+                return (
+                  <tr key={col.id}>
+                    <td>
+                      <img
+                        src={col.image || "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=100&q=80"}
+                        alt={col.name}
+                        style={{
+                          width: 56,
+                          height: 42,
+                          objectFit: "cover",
+                          borderRadius: 8,
+                          border: "1px solid #e5e7eb",
+                        }}
+                      />
+                    </td>
+                    <td>
+                      <strong style={{ fontSize: 14, color: "#111827", display: "block" }}>
+                        {col.name}
+                      </strong>
+                      <span style={{ fontSize: 12, color: "#6b7280" }}>
+                        {col.description ? col.description.slice(0, 60) + (col.description.length > 60 ? "…" : "") : "No description"}
+                      </span>
+                    </td>
+                    <td>
+                      <code style={{ fontSize: 12, background: "#f3f4f6", padding: "2px 6px", borderRadius: 4 }}>
+                        /lifestyle/{col.slug}
+                      </code>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, maxWidth: 260 }}>
+                        {subcats.slice(0, 3).map((sub: string) => (
+                          <span
+                            key={sub}
+                            style={{
+                              fontSize: 11,
+                              background: "#f0fdf4",
+                              color: "#166534",
+                              border: "1px solid #bbf7d0",
+                              padding: "1px 6px",
+                              borderRadius: 6,
+                            }}
+                          >
+                            {sub}
+                          </span>
+                        ))}
+                        {subcats.length > 3 && (
+                          <span style={{ fontSize: 11, color: "#6b7280" }}>
+                            +{subcats.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ textAlign: "center", fontWeight: 600, color: "#065f46" }}>
+                      {col.productCount ?? 0}
+                    </td>
+                    <td style={{ textAlign: "center", color: "#6b7280" }}>
+                      {col.displayOrder ?? 0}
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "3px 10px",
+                          borderRadius: 12,
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          background: isActive ? "#dcfce7" : "#fee2e2",
+                          color: isActive ? "#15803d" : "#b91c1c",
+                        }}
+                      >
+                        {isActive ? "Active" : "Hidden"}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <div style={{ display: "inline-flex", gap: 6 }}>
+                        <Link
+                          to={`/lifestyle/${col.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="vd-act-btn"
+                          title="View on site"
+                          style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db" }}
+                        >
+                          <Eye size={15} color="#4b5563" />
+                        </Link>
+                        <button
+                          type="button"
+                          className="vd-act-btn"
+                          title={isActive ? "Hide collection" : "Activate collection"}
+                          onClick={() => handleToggleStatus(col)}
+                          style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db" }}
+                        >
+                          {isActive ? <Ban size={15} color="#d97706" /> : <CheckCircle2 size={15} color="#16a34a" />}
+                        </button>
+                        <button
+                          type="button"
+                          className="vd-act-btn"
+                          title="Edit collection"
+                          onClick={() => openEditModal(col)}
+                          style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db" }}
+                        >
+                          <Pencil size={15} color="#2563eb" />
+                        </button>
+                        <button
+                          type="button"
+                          className="vd-act-btn"
+                          title="Delete collection"
+                          onClick={() => handleDelete(col)}
+                          style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db" }}
+                        >
+                          <Trash2 size={15} color="#dc2626" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Create / Edit Modal */}
+      {modalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 16,
+              maxWidth: 600,
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              padding: 28,
+              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h2 style={{ margin: 0, fontSize: 18, color: "#111827", display: "flex", alignItems: "center", gap: 8 }}>
+                <Sparkles size={20} color="#168d51" />
+                {editingCol ? `Edit Collection: ${editingCol.name}` : "Create Lifestyle Collection"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280" }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14 }}>
+              <label className="vd-field">
+                <span>Collection Name <i>*</i></span>
+                <input
+                  type="text"
+                  required
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="e.g. Traditional Nepali Crafts, Mountain Living"
+                />
+              </label>
+
+              <label className="vd-field">
+                <span>URL Slug (Optional - auto-generated if blank)</span>
+                <input
+                  type="text"
+                  value={formSlug}
+                  onChange={(e) => setFormSlug(e.target.value)}
+                  placeholder="e.g. traditional-crafts"
+                />
+              </label>
+
+              <label className="vd-field">
+                <span>Description</span>
+                <textarea
+                  rows={3}
+                  value={formDesc}
+                  onChange={(e) => setFormDesc(e.target.value)}
+                  placeholder="Short description summarizing this lifestyle collection..."
+                  style={{
+                    padding: 10,
+                    borderRadius: 8,
+                    border: "1px solid #d1d5db",
+                    fontSize: 13.5,
+                  }}
+                />
+              </label>
+
+              <label className="vd-field">
+                <span>Hero / Cover Image URL</span>
+                <input
+                  type="url"
+                  value={formImage}
+                  onChange={(e) => setFormImage(e.target.value)}
+                  placeholder="https://images.unsplash.com/..."
+                />
+              </label>
+
+              <label className="vd-field">
+                <span>Subcategories (Comma-separated)</span>
+                <input
+                  type="text"
+                  value={formSubcats}
+                  onChange={(e) => setFormSubcats(e.target.value)}
+                  placeholder="e.g. Sofas, Beds, Tables, Chairs, Cabinets"
+                />
+                <small style={{ color: "#6b7280", marginTop: 4, display: "block" }}>
+                  Separate individual subcategories with commas.
+                </small>
+              </label>
+
+              <div className="vd-grid-2">
+                <label className="vd-field">
+                  <span>Display Sort Order</span>
+                  <input
+                    type="number"
+                    value={formOrder}
+                    onChange={(e) => setFormOrder(e.target.value)}
+                    min="0"
+                  />
+                </label>
+
+                <label className="vd-field">
+                  <span>Status</span>
+                  <select
+                    value={formActive}
+                    onChange={(e) => setFormActive(parseInt(e.target.value, 10))}
+                  >
+                    <option value={1}>Active (Visible)</option>
+                    <option value={0}>Hidden (Draft)</option>
+                  </select>
+                </label>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  style={{
+                    padding: "9px 18px",
+                    borderRadius: 8,
+                    border: "1px solid #d1d5db",
+                    background: "#ffffff",
+                    fontSize: 13.5,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="vd-add-btn"
+                  style={{ minWidth: 120 }}
+                >
+                  {saving ? "Saving..." : editingCol ? "Save Changes" : "Create Collection"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

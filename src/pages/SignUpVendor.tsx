@@ -32,6 +32,12 @@ import {
   isNepalMobile,
   isStrongPassword,
 } from "../utils/fileToDataUrl";
+import {
+  getFormErrorScrollHandler,
+  scrollToElement,
+  scrollToFirstError,
+  mapBackendErrorToField,
+} from "../utils/formErrorNavigation";
 
 const signUpVendorSchema = yup.object({
   fullName: yup.string().required("Please enter owner's full name").trim(),
@@ -176,6 +182,7 @@ function SignUpVendor() {
         setServerError(
           "Please resolve errors in owner account details before continuing",
         );
+        setTimeout(() => scrollToFirstError(), 50);
         return false;
       }
     }
@@ -191,6 +198,7 @@ function SignUpVendor() {
         setServerError(
           "Please complete the required business and address information",
         );
+        setTimeout(() => scrollToFirstError(), 50);
         return false;
       }
     }
@@ -222,6 +230,11 @@ function SignUpVendor() {
     setLoading(false);
     if (result) {
       setServerError(result);
+      const { targetSelector } = mapBackendErrorToField(result);
+      setTimeout(() => {
+        const el = targetSelector ? document.querySelector<HTMLElement>(targetSelector) : document.querySelector<HTMLElement>(".auth-error");
+        if (el) scrollToElement(el, { focusField: true });
+      }, 50);
       return;
     }
     navigate("/signup/vendor/status", {
@@ -294,7 +307,7 @@ function SignUpVendor() {
 
         <form
           className="auth-form"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmit, getFormErrorScrollHandler())}
           noValidate
         >
           {/* STEP 1: Owner & Account */}

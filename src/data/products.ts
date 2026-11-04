@@ -1,8 +1,21 @@
+export interface ProductVariant {
+  id: string;
+  name: string;
+  optionType?: string;
+  price?: number;
+  stock?: number;
+  sku?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
   category: string;
   weight: string;
+  sellingUnit?: string;
+  allowDecimals?: number;
+  variants?: ProductVariant[];
+  variantsJson?: string;
   price: number;
   rating: number;
   sold: string;
@@ -10,6 +23,8 @@ export interface Product {
   seller: string;
   image: string;
   gallery: string[];
+  stock?: number;
+  description?: string;
 }
 
 const productList: Omit<Product, "gallery">[] = [

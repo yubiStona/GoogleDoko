@@ -9,6 +9,10 @@ import { api } from "../api/client";
 import { products } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useCheckout } from "../context/CheckoutContext";
+import {
+  resolveProductSellingUnit,
+  isLifestyleCategory,
+} from "../utils/productUnits";
 
 function Cart() {
   const navigate = useNavigate();
@@ -131,6 +135,9 @@ function Cart() {
                   );
                   const lineTotal = price * quantity;
                   const origin = item.origin || catalogItem?.origin || "";
+                  const category = item.category || catalogItem?.category || "";
+                  const sellingUnit = resolveProductSellingUnit(category, item.sellingUnit, weight);
+                  const isLifestyle = isLifestyleCategory(category);
 
                   let imageSrc = item.image || catalogItem?.image || "";
                   if (imageSrc.startsWith("/src/frontend/assets/")) {
@@ -168,10 +175,16 @@ function Cart() {
                           <span className="cart-item-origin">{origin}</span>
                         ) : null}
 
-                        <strong>{weight}</strong>
+                        {item.variant ? (
+                          <span style={{ fontSize: 12, color: "#168d51", fontWeight: 600, display: "block" }}>
+                            Option: {item.variant.name || item.variant}
+                          </span>
+                        ) : isLifestyle ? null : (
+                          <strong>{weight}</strong>
+                        )}
 
                         <span className="cart-item-price">
-                          Rs. {price.toLocaleString()} /kg
+                          Rs. {price.toLocaleString()} / {sellingUnit}
                         </span>
                       </div>
 

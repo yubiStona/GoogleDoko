@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, AlertCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -8,6 +8,7 @@ import * as yup from "yup";
 import CheckoutShell from "../components/CheckoutShell";
 import OrderSummaryCard from "../components/OrderSummaryCard";
 import { useCheckout, type AddressType } from "../context/CheckoutContext";
+import { scrollToElement, scrollToFirstError } from "../utils/formErrorNavigation";
 
 const provinces = [
   "Bagmati Province",
@@ -55,6 +56,8 @@ function CheckoutDelivery() {
     saveCurrentAddress,
   } = useCheckout();
 
+  const [addressSelectionError, setAddressSelectionError] = useState<string | null>(null);
+
   const {
     handleSubmit,
     setValue,
@@ -85,10 +88,24 @@ function CheckoutDelivery() {
   }, [items.length, navigate]);
 
   async function continueToPayment() {
+    // If user has saved addresses but none is chosen and form is not completely filled
+    if (
+      addresses.length > 0 &&
+      !selectedAddressId &&
+      (!values.fullName || !values.phone || !values.street || !values.district)
+    ) {
+      setAddressSelectionError("Please select a delivery address before continuing.");
+      const grid = document.querySelector<HTMLElement>(".co-address-grid");
+      scrollToElement(grid, { focusField: true });
+      return;
+    }
+
+    setAddressSelectionError(null);
     const isValid = await trigger();
     if (!isValid) {
-      const firstError = document.querySelector(".co-form-grid span[style*='ef4444'], .co-form-grid input[style*='ef4444']");
-      firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setTimeout(() => {
+        scrollToFirstError(document, { focusField: true });
+      }, 50);
       return;
     }
 
@@ -100,6 +117,7 @@ function CheckoutDelivery() {
   }
 
   const handleFieldChange = (key: keyof DeliveryFormData, value: any) => {
+    setAddressSelectionError(null);
     setValue(key, value, { shouldValidate: true });
     updateForm(key as any, value);
   };
@@ -110,13 +128,23 @@ function CheckoutDelivery() {
         <div className="co-main">
           <h1>Select Delivery Address</h1>
 
-          <div className="co-address-grid">
+          {addressSelectionError && (
+            <div className="co-group-error-banner" role="alert">
+              <AlertCircle size={18} />
+              <span>{addressSelectionError}</span>
+            </div>
+          )}
+
+          <div className={`co-address-grid ${addressSelectionError ? "has-error" : ""}`}>
             {addresses.map((address) => (
               <button
                 type="button"
                 key={address.id}
                 className={`co-address-card ${selectedAddressId === address.id ? "selected" : ""}`}
-                onClick={() => selectAddress(address.id)}
+                onClick={() => {
+                  setAddressSelectionError(null);
+                  selectAddress(address.id);
+                }}
               >
                 <span className="co-address-label">{address.label}</span>
                 <strong>{address.title}</strong>
@@ -129,7 +157,10 @@ function CheckoutDelivery() {
           <button
             type="button"
             className="co-add-address"
-            onClick={startNewAddress}
+            onClick={() => {
+              setAddressSelectionError(null);
+              startNewAddress();
+            }}
           >
             <Plus size={16} />
             Add New Address
@@ -139,38 +170,51 @@ function CheckoutDelivery() {
             <h2>Recipient Information</h2>
 
             <form onSubmit={handleSubmit(continueToPayment)} className="co-form-grid" noValidate>
-              <label>
+              <label htmlFor="fullName">
                 Full Name *
                 <input
+                  id="fullName"
+                  name="fullName"
                   value={values.fullName || ""}
+                  aria-invalid={Boolean(errors.fullName)}
+                  aria-describedby={errors.fullName ? "fullName-error" : undefined}
                   style={{ borderColor: errors.fullName ? "#ef4444" : undefined }}
                   onChange={(event) => handleFieldChange("fullName", event.target.value)}
                   placeholder="Enter your full name"
                 />
                 {errors.fullName?.message && (
-                  <span style={{ color: "#ef4444", fontSize: 11, display: "block" }}>
-                    {errors.fullName.message}
+                  <span id="fullName-error" className="form-field-error-msg" role="alert">
+                    <AlertCircle size={13} /> {errors.fullName.message}
                   </span>
                 )}
               </label>
-              <label>
+              <label htmlFor="phone">
                 Phone Number *
                 <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
                   value={values.phone || ""}
+                  aria-invalid={Boolean(errors.phone)}
+                  aria-describedby={errors.phone ? "phone-error" : undefined}
                   style={{ borderColor: errors.phone ? "#ef4444" : undefined }}
                   onChange={(event) => handleFieldChange("phone", event.target.value)}
                   placeholder="Enter 10-digit mobile number"
                 />
                 {errors.phone?.message && (
-                  <span style={{ color: "#ef4444", fontSize: 11, display: "block" }}>
-                    {errors.phone.message}
+                  <span id="phone-error" className="form-field-error-msg" role="alert">
+                    <AlertCircle size={13} /> {errors.phone.message}
                   </span>
                 )}
               </label>
-              <label>
+              <label htmlFor="province">
                 Province *
                 <select
+                  id="province"
+                  name="province"
                   value={values.province || provinces[0]}
+                  aria-invalid={Boolean(errors.province)}
+                  aria-describedby={errors.province ? "province-error" : undefined}
                   style={{ borderColor: errors.province ? "#ef4444" : undefined }}
                   onChange={(event) => handleFieldChange("province", event.target.value)}
                 >
@@ -179,64 +223,80 @@ function CheckoutDelivery() {
                   ))}
                 </select>
                 {errors.province?.message && (
-                  <span style={{ color: "#ef4444", fontSize: 11, display: "block" }}>
-                    {errors.province.message}
+                  <span id="province-error" className="form-field-error-msg" role="alert">
+                    <AlertCircle size={13} /> {errors.province.message}
                   </span>
                 )}
               </label>
-              <label>
+              <label htmlFor="district">
                 District / City *
                 <input
+                  id="district"
+                  name="district"
                   value={values.district || ""}
+                  aria-invalid={Boolean(errors.district)}
+                  aria-describedby={errors.district ? "district-error" : undefined}
                   style={{ borderColor: errors.district ? "#ef4444" : undefined }}
                   onChange={(event) => handleFieldChange("district", event.target.value)}
                   placeholder="Kathmandu"
                 />
                 {errors.district?.message && (
-                  <span style={{ color: "#ef4444", fontSize: 11, display: "block" }}>
-                    {errors.district.message}
+                  <span id="district-error" className="form-field-error-msg" role="alert">
+                    <AlertCircle size={13} /> {errors.district.message}
                   </span>
                 )}
               </label>
-              <label>
+              <label htmlFor="area">
                 Area *
                 <input
+                  id="area"
+                  name="area"
                   value={values.area || ""}
+                  aria-invalid={Boolean(errors.area)}
+                  aria-describedby={errors.area ? "area-error" : undefined}
                   style={{ borderColor: errors.area ? "#ef4444" : undefined }}
                   onChange={(event) => handleFieldChange("area", event.target.value)}
                   placeholder="Budhanilkantha Area"
                 />
                 {errors.area?.message && (
-                  <span style={{ color: "#ef4444", fontSize: 11, display: "block" }}>
-                    {errors.area.message}
+                  <span id="area-error" className="form-field-error-msg" role="alert">
+                    <AlertCircle size={13} /> {errors.area.message}
                   </span>
                 )}
               </label>
-              <label>
+              <label htmlFor="street">
                 Street Address *
                 <input
+                  id="street"
+                  name="street"
                   value={values.street || ""}
+                  aria-invalid={Boolean(errors.street)}
+                  aria-describedby={errors.street ? "street-error" : undefined}
                   style={{ borderColor: errors.street ? "#ef4444" : undefined }}
                   onChange={(event) => handleFieldChange("street", event.target.value)}
                   placeholder="Gairigaon Marg"
                 />
                 {errors.street?.message && (
-                  <span style={{ color: "#ef4444", fontSize: 11, display: "block" }}>
-                    {errors.street.message}
+                  <span id="street-error" className="form-field-error-msg" role="alert">
+                    <AlertCircle size={13} /> {errors.street.message}
                   </span>
                 )}
               </label>
-              <label>
+              <label htmlFor="landmark">
                 Landmark (Optional)
                 <input
+                  id="landmark"
+                  name="landmark"
                   value={values.landmark || ""}
                   onChange={(event) => handleFieldChange("landmark", event.target.value)}
                   placeholder="Near Ganesh Mandir"
                 />
               </label>
-              <label>
+              <label htmlFor="postalCode">
                 Postal Code
                 <input
+                  id="postalCode"
+                  name="postalCode"
                   value={values.postalCode || ""}
                   onChange={(event) => handleFieldChange("postalCode", event.target.value)}
                   placeholder="44600"

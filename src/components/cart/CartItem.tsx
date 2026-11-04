@@ -1,6 +1,7 @@
 import React from "react";
 import { Trash2, Plus, Minus } from "lucide-react";
 import type { CartItem as CartItemType } from "../../context/CartContext";
+import { resolveProductSellingUnit } from "../../utils/productUnits";
 
 export interface CartItemProps {
   item: CartItemType;
@@ -9,6 +10,8 @@ export interface CartItemProps {
 }
 
 export const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRemove }) => {
+  const unit = resolveProductSellingUnit(item.category, item.sellingUnit, item.weight);
+
   return (
     <div className="flex items-center justify-between gap-4 py-3 border-b border-slate-100 last:border-0">
       <div className="flex items-center gap-3">
@@ -21,7 +24,10 @@ export const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRe
         )}
         <div>
           <h4 className="text-sm font-semibold text-slate-800">{item.name}</h4>
-          <p className="text-xs text-slate-500">{item.weight} • Rs. {item.price}</p>
+          <p className="text-xs text-slate-500">
+            {item.variant ? `Option: ${item.variant.name || item.variant} • ` : item.weight ? `${item.weight} • ` : ""}
+            Rs. {item.price.toLocaleString()} / {unit}
+          </p>
         </div>
       </div>
 

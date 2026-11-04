@@ -9,6 +9,7 @@ import AuthPasswordField from "../components/auth/AuthPasswordField";
 import { postLoginPath, useAccount } from "../context/AccountContext";
 import { type AccountRole } from "../data/authOptions";
 import loginProduceImage from "../assets/images/login-produce.jpg";
+import { getFormErrorScrollHandler, scrollToElement } from "../utils/formErrorNavigation";
 
 const loginSchema = yup.object({
   identifier: yup
@@ -90,6 +91,10 @@ function Login() {
     setLoading(false);
     if (result) {
       setServerError(result);
+      setTimeout(() => {
+        const errorEl = document.querySelector<HTMLElement>(".auth-error");
+        if (errorEl) scrollToElement(errorEl, { focusField: true });
+      }, 50);
     }
   }
 
@@ -135,7 +140,7 @@ function Login() {
             </button>
           </div>
 
-          <form className="auth-form" onSubmit={handleSubmit(onSubmit)} noValidate>
+          <form className="auth-form" onSubmit={handleSubmit(onSubmit, getFormErrorScrollHandler())} noValidate>
             <label className={`auth-field${errors.identifier ? " invalid" : ""}`}>
               <span>Email / Phone Number</span>
               <input

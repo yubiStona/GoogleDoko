@@ -33,9 +33,12 @@ function LocalPlaces() {
   const places = useMemo(() => {
     if (serverPlaces && serverPlaces.length > 0) {
       return serverPlaces.map((p: any) => ({
+        id: p.id || p.origin.split(",")[0].trim().toLowerCase(),
         origin: p.origin,
         name: p.name,
-        products: p.totalSold || p.productsCount || 0,
+        products: p.itemCount ?? p.productsCount ?? 0,
+        sold: p.soldCount ?? p.totalSold ?? 0,
+        description: p.description || "",
         image: placeImage(p.origin),
       }));
     }
@@ -78,7 +81,7 @@ function LocalPlaces() {
             {paged.items.map((place) => (
               <Link
                 key={place.origin}
-                to={`/categories?place=${encodeURIComponent(place.origin)}`}
+                to={`/places/${place.id}`}
                 className="place-card"
               >
                 <img

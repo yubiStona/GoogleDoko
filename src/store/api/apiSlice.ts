@@ -124,8 +124,68 @@ export const apiSlice = createApi({
       query: () => "/places",
       providesTags: ["Products"],
     }),
+    getPlaceBySlug: builder.query<any, string>({
+      query: (slug) => `/places/${slug}`,
+      providesTags: ["Products"],
+    }),
+    getPlaceCategories: builder.query<any[], string>({
+      query: (slug) => `/places/${slug}/categories`,
+      providesTags: ["Products"],
+    }),
+    getPlaceProducts: builder.query<any, { slug: string; [key: string]: any }>({
+      query: ({ slug, ...params }) => ({
+        url: `/places/${slug}/products`,
+        params,
+      }),
+      providesTags: ["Products"],
+    }),
+    getPlacePopularProducts: builder.query<any[], { slug: string; limit?: number }>({
+      query: ({ slug, limit = 4 }) => `/places/${slug}/popular-products?limit=${limit}`,
+      providesTags: ["Products"],
+    }),
+    getLifestyles: builder.query<any[], void>({
+      query: () => "/lifestyles",
+      providesTags: ["Products"],
+    }),
+    getLifestyleBySlug: builder.query<any, string>({
+      query: (slug) => `/lifestyles/${slug}`,
+      providesTags: ["Products"],
+    }),
+    getLifestyleProducts: builder.query<any, { slug: string; [key: string]: any }>({
+      query: ({ slug, ...params }) => ({
+        url: `/lifestyles/${slug}/products`,
+        params,
+      }),
+      providesTags: ["Products"],
+    }),
     getOffers: builder.query<any, void>({
       query: () => "/offers",
+    }),
+    getProductReviews: builder.query<any, { productId: string; [key: string]: any }>({
+      query: ({ productId, ...params }) => ({
+        url: `/products/${productId}/reviews`,
+        params,
+      }),
+      providesTags: ["Products"],
+    }),
+    getMyReviews: builder.query<any[], void>({
+      query: () => "/reviews/my-reviews",
+      providesTags: ["Products"],
+    }),
+    submitReview: builder.mutation<any, any>({
+      query: (body) => ({
+        url: "/reviews",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Products"],
+    }),
+    voteHelpful: builder.mutation<any, number>({
+      query: (id) => ({
+        url: `/reviews/${id}/helpful`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Products"],
     }),
     getVendorOrders: builder.query<Order[], void>({
       query: () => "/vendor/orders",
@@ -325,7 +385,18 @@ export const {
   useGetLatestProductsQuery,
   useGetCategoriesQuery,
   useGetPlacesQuery,
+  useGetPlaceBySlugQuery,
+  useGetPlaceCategoriesQuery,
+  useGetPlaceProductsQuery,
+  useGetPlacePopularProductsQuery,
+  useGetLifestylesQuery,
+  useGetLifestyleBySlugQuery,
+  useGetLifestyleProductsQuery,
   useGetOffersQuery,
+  useGetProductReviewsQuery,
+  useGetMyReviewsQuery,
+  useSubmitReviewMutation,
+  useVoteHelpfulMutation,
   useGetVendorOrdersQuery,
   useGetProductByIdQuery,
   useGetMeQuery,
