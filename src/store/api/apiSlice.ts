@@ -1,92 +1,51 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import baseQuery from "../baseQuery";
+import type {
+  Product,
+  User,
+  Order,
+  Coupon,
+  OffersResponse,
+  AuthResponse,
+  CustomerRegisterPayload,
+  VendorRegisterPayload,
+  ReviewSubmissionPayload,
+  ReviewResponse,
+  SupportMessagePayload,
+  ApiCategory,
+  ApiPlace,
+  PlaceCategorySummary,
+  PlaceProductsResponse,
+  LifestyleCollection,
+  LifestyleProductsResponse,
+  AdminOverview,
+  AdminVendor,
+  AdminOrder,
+  SupportMessage,
+  ProductReviewsResponse,
+  MyReviewItem,
+} from "./types";
 
-export interface Product {
-  id: string;
-  name: string;
-  category: string;
-  weight: string;
-  price: number;
-  rating: number;
-  sold: string;
-  origin: string;
-  seller: string;
-  image: string;
-  stock?: number;
-  active?: number;
-  description?: string;
-}
-
-export interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  location: string;
-  verified: boolean;
-  rewardPoints: number;
-  referralCode: string;
-  photo: string;
-  role: "admin" | "vendor" | "customer";
-  vendor?: any;
-  shop?: any;
-}
-
-export interface Order {
-  id: string;
-  date: string;
-  status: string;
-  subtotal: number;
-  deliveryFee: number;
-  discount: number;
-  total: number;
-  paymentMethod: string;
-  paymentStatus: string;
-  deliveryAddress: string;
-  recipientName: string;
-  recipientPhone: string;
-  items: any[];
-}
-
-export interface Coupon {
-  id: number;
-  code: string;
-  discount_type: "percentage" | "fixed";
-  discount_value: number;
-  min_order: number;
-  max_uses: number;
-  times_used: number;
-  expiry_date?: string | null;
-  active: number;
-  created_at: string;
-}
+export * from "./types";
+export * from "./utils";
+export * from "./product";
+export * from "./categories";
+export * from "./brands";
+export * from "./gallery";
+export * from "./hero";
+export * from "./reviews";
+export * from "./orders";
+export * from "./auth";
+export * from "./dashboard";
+export * from "./contactUs";
+export * from "./aboutUs";
+export * from "./customer";
+export * from "./siteSettings";
+export * from "./projects";
 
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: async (args, api, extraOptions) => {
-    const rawBaseQuery = fetchBaseQuery({
-      baseUrl:
-        import.meta.env.MODE === "test"
-          ? "http://localhost:4000/api"
-          : "/api",
-      prepareHeaders: (headers) => {
-        const token =
-          localStorage.getItem("googledoko-token") ||
-          sessionStorage.getItem("googledoko-token") ||
-          localStorage.getItem("gd_token");
-        if (token) {
-          headers.set("Authorization", `Bearer ${token}`);
-        }
-        return headers;
-      },
-    });
-
-    const result = await rawBaseQuery(args, api, extraOptions);
-    if (result.data && typeof result.data === "object" && "data" in (result.data as any) && (result.data as any).data !== undefined) {
-      return { ...result, data: (result.data as any).data };
-    }
-    return result;
-  },
+  baseQuery,
   tagTypes: [
     "User",
     "Products",
@@ -97,6 +56,11 @@ export const apiSlice = createApi({
     "AdminSettings",
     "AdminOrders",
     "AdminSupport",
+    "Places",
+    "Categories",
+    "Lifestyle",
+    "Offers",
+    "Reviews",
   ],
   endpoints: (builder) => ({
     // Products
@@ -116,76 +80,118 @@ export const apiSlice = createApi({
       query: (limit = 8) => `/products/latest?limit=${limit}`,
       providesTags: ["Products"],
     }),
-    getCategories: builder.query<any[], void>({
+    getCategories: builder.query<ApiCategory[], void>({
       query: () => "/categories",
-      providesTags: ["Products"],
+      providesTags: ["Categories"],
     }),
-    getPlaces: builder.query<any[], void>({
+    getPlaces: builder.query<ApiPlace[], void>({
       query: () => "/places",
-      providesTags: ["Products"],
+      providesTags: ["Places"],
     }),
-    getPlaceBySlug: builder.query<any, string>({
+    getPlaceBySlug: builder.query<ApiPlace, string>({
       query: (slug) => `/places/${slug}`,
-      providesTags: ["Products"],
+      providesTags: (_result, _error, slug) => [{ type: "Places", id: slug }],
     }),
-    getPlaceCategories: builder.query<any[], string>({
+    getPlaceCategories: builder.query<PlaceCategorySummary[], string>({
       query: (slug) => `/places/${slug}/categories`,
-      providesTags: ["Products"],
+      providesTags: (_result, _error, slug) => [
+        { type: "Places", id: `${slug}-categories` },
+      ],
     }),
-    getPlaceProducts: builder.query<any, { slug: string; [key: string]: any }>({
+    getPlaceProducts: builder.query<
+      PlaceProductsResponse,
+      {
+        slug: string;
+        category?: string;
+        sort?: string;
+        page?: number;
+        limit?: number;
+        search?: string;
+      }
+    >({
       query: ({ slug, ...params }) => ({
         url: `/places/${slug}/products`,
         params,
       }),
-      providesTags: ["Products"],
+      providesTags: (_result, _error, { slug }) => [
+        { type: "Places", id: `${slug}-products` },
+      ],
     }),
-    getPlacePopularProducts: builder.query<any[], { slug: string; limit?: number }>({
-      query: ({ slug, limit = 4 }) => `/places/${slug}/popular-products?limit=${limit}`,
-      providesTags: ["Products"],
+    getPlacePopularProducts: builder.query<
+      Product[],
+      { slug: string; limit?: number }
+    >({
+      query: ({ slug, limit = 4 }) => `/places/${slug}/popular?limit=${limit}`,
+      providesTags: (_result, _error, { slug }) => [
+        { type: "Places", id: `${slug}-popular` },
+      ],
     }),
-    getLifestyles: builder.query<any[], void>({
-      query: () => "/lifestyles",
-      providesTags: ["Products"],
+    getLifestyles: builder.query<LifestyleCollection[], void>({
+      query: () => "/lifestyle",
+      providesTags: ["Lifestyle"],
     }),
-    getLifestyleBySlug: builder.query<any, string>({
-      query: (slug) => `/lifestyles/${slug}`,
-      providesTags: ["Products"],
+    getLifestyleBySlug: builder.query<LifestyleCollection, string>({
+      query: (slug) => `/lifestyle/${slug}`,
+      providesTags: (_result, _error, slug) => [
+        { type: "Lifestyle", id: slug },
+      ],
     }),
-    getLifestyleProducts: builder.query<any, { slug: string; [key: string]: any }>({
+    getLifestyleProducts: builder.query<
+      LifestyleProductsResponse,
+      {
+        slug: string;
+        category?: string;
+        sort?: string;
+        page?: number;
+        limit?: number;
+        search?: string;
+      }
+    >({
       query: ({ slug, ...params }) => ({
-        url: `/lifestyles/${slug}/products`,
+        url: `/lifestyle/${slug}/products`,
         params,
       }),
-      providesTags: ["Products"],
+      providesTags: (_result, _error, { slug }) => [
+        { type: "Lifestyle", id: `${slug}-products` },
+      ],
     }),
-    getOffers: builder.query<any, void>({
+    getOffers: builder.query<OffersResponse, void>({
       query: () => "/offers",
+      providesTags: ["Offers"],
     }),
-    getProductReviews: builder.query<any, { productId: string; [key: string]: any }>({
+    getProductReviews: builder.query<
+      ProductReviewsResponse,
+      { productId: string; page?: number; limit?: number; sort?: string }
+    >({
       query: ({ productId, ...params }) => ({
-        url: `/products/${productId}/reviews`,
+        url: `/reviews/product/${productId}`,
         params,
       }),
-      providesTags: ["Products"],
+      providesTags: (_result, _error, { productId }) => [
+        { type: "Reviews", id: productId },
+      ],
     }),
-    getMyReviews: builder.query<any[], void>({
+    getMyReviews: builder.query<MyReviewItem[], void>({
       query: () => "/reviews/my-reviews",
-      providesTags: ["Products"],
+      providesTags: ["Reviews"],
     }),
-    submitReview: builder.mutation<any, any>({
+    submitReview: builder.mutation<ReviewResponse, ReviewSubmissionPayload>({
       query: (body) => ({
         url: "/reviews",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Products"],
+      invalidatesTags: ["Reviews"],
     }),
-    voteHelpful: builder.mutation<any, number>({
-      query: (id) => ({
-        url: `/reviews/${id}/helpful`,
+    voteHelpful: builder.mutation<
+      { ok: boolean; helpfulCount: number },
+      { reviewId: number }
+    >({
+      query: ({ reviewId }) => ({
+        url: `/reviews/${reviewId}/vote`,
         method: "POST",
       }),
-      invalidatesTags: ["Products"],
+      invalidatesTags: ["Reviews"],
     }),
     getVendorOrders: builder.query<Order[], void>({
       query: () => "/vendor/orders",
@@ -195,121 +201,130 @@ export const apiSlice = createApi({
       query: (id) => `/products/${id}`,
       providesTags: (_result, _error, id) => [{ type: "Products", id }],
     }),
-
-    // Auth
-    getMe: builder.query<any, void>({
+    getMe: builder.query<User, void>({
       query: () => "/auth/me",
       providesTags: ["User"],
     }),
-    login: builder.mutation<any, { identifier: string; password: string; expectedRole?: string }>({
+    login: builder.mutation<
+      AuthResponse,
+      { email: string; password: string; role?: string }
+    >({
       query: (credentials) => ({
         url: "/auth/login",
         method: "POST",
         body: credentials,
       }),
-      invalidatesTags: ["User", "Orders"],
+      invalidatesTags: ["User"],
     }),
-    registerCustomer: builder.mutation<any, any>({
-      query: (data) => ({
+    registerCustomer: builder.mutation<AuthResponse, CustomerRegisterPayload>({
+      query: (body) => ({
         url: "/auth/register",
         method: "POST",
-        body: data,
+        body,
       }),
       invalidatesTags: ["User"],
     }),
-    registerVendor: builder.mutation<any, any>({
-      query: (data) => ({
+    registerVendor: builder.mutation<AuthResponse, VendorRegisterPayload>({
+      query: (body) => ({
         url: "/auth/register-vendor",
         method: "POST",
-        body: data,
+        body,
       }),
-      invalidatesTags: ["User", "AdminVendors"],
+      invalidatesTags: ["User"],
     }),
-    updateProfile: builder.mutation<any, any>({
-      query: (data) => ({
+    updateProfile: builder.mutation<User, Partial<User>>({
+      query: (body) => ({
         url: "/auth/profile",
-        method: "PUT",
-        body: data,
+        method: "PATCH",
+        body,
       }),
       invalidatesTags: ["User"],
     }),
-    changePassword: builder.mutation<any, { current: string; next: string }>({
-      query: (passwords) => ({
-        url: "/auth/password",
-        method: "PUT",
-        body: passwords,
-      }),
-    }),
-    forgotPassword: builder.mutation<any, { email: string }>({
+    changePassword: builder.mutation<
+      { ok: boolean; message: string },
+      { currentPassword?: string; oldPassword?: string; newPassword: string }
+    >({
       query: (body) => ({
-        url: "/auth/forgot",
+        url: "/auth/change-password",
         method: "POST",
         body,
       }),
     }),
-    resetPassword: builder.mutation<any, { token: string; password: string }>({
+    forgotPassword: builder.mutation<
+      { ok: boolean; message: string; devResetUrl?: string },
+      { email: string }
+    >({
       query: (body) => ({
-        url: "/auth/reset",
+        url: "/auth/forgot-password",
         method: "POST",
         body,
       }),
     }),
-
-    // Shop synchronization
-    syncShop: builder.mutation<any, any>({
-      query: (shop) => ({
-        url: "/me/shop",
-        method: "PUT",
-        body: shop,
+    resetPassword: builder.mutation<
+      { ok: boolean; message: string },
+      { token: string; newPassword: string }
+    >({
+      query: (body) => ({
+        url: "/auth/reset-password",
+        method: "POST",
+        body,
+      }),
+    }),
+    syncShop: builder.mutation<
+      { ok: boolean; message: string; shop?: Record<string, unknown> },
+      Record<string, unknown>
+    >({
+      query: (body) => ({
+        url: "/auth/sync-shop",
+        method: "POST",
+        body,
       }),
       invalidatesTags: ["User"],
     }),
-
-    // Orders
     getOrders: builder.query<Order[], void>({
       query: () => "/orders",
       providesTags: ["Orders"],
     }),
-    createOrder: builder.mutation<any, any>({
-      query: (orderData) => ({
-        url: "/orders",
+    createOrder: builder.mutation<Order, Partial<Order>>({
+      query: (body) => ({
+        url: "/checkout/order",
         method: "POST",
-        body: orderData,
+        body,
       }),
-      invalidatesTags: ["Orders", "Products", "AdminOverview", "AdminOrders"],
+      invalidatesTags: ["Orders"],
     }),
-
-    // Public / general
     subscribeNewsletter: builder.mutation<{ ok: boolean }, { email: string }>({
       query: (body) => ({
-        url: "/newsletter",
+        url: "/support/newsletter",
         method: "POST",
         body,
       }),
     }),
-    sendSupportMessage: builder.mutation<{ id: number }, any>({
-      query: (body) => ({
-        url: "/support",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["AdminSupport"],
-    }),
-
-    // Admin endpoints
-    getAdminOverview: builder.query<any, void>({
+    sendSupportMessage: builder.mutation<{ id: number }, SupportMessagePayload>(
+      {
+        query: (body) => ({
+          url: "/support/message",
+          method: "POST",
+          body,
+        }),
+      },
+    ),
+    getAdminOverview: builder.query<AdminOverview, void>({
       query: () => "/admin/overview",
       providesTags: ["AdminOverview"],
     }),
-    getAdminVendors: builder.query<any[], void>({
+    getAdminVendors: builder.query<AdminVendor[], void>({
       query: () => "/admin/vendors",
       providesTags: ["AdminVendors"],
     }),
-    updateVendorStatus: builder.mutation<any, { userId: number | string; status: string }>({
-      query: ({ userId, status }) => ({
-        url: `/admin/vendors/${userId}/status`,
+    updateVendorStatus: builder.mutation<
+      { ok: boolean },
+      { vendorId: number; status: string; reason?: string }
+    >({
+      query: ({ vendorId, ...body }) => ({
+        url: `/admin/vendors/${vendorId}/status`,
         method: "PATCH",
-        body: { status },
+        body,
       }),
       invalidatesTags: ["AdminVendors", "AdminOverview"],
     }),
@@ -317,61 +332,72 @@ export const apiSlice = createApi({
       query: () => "/admin/coupons",
       providesTags: ["AdminCoupons"],
     }),
-    createCoupon: builder.mutation<any, Partial<Coupon>>({
-      query: (coupon) => ({
+    createCoupon: builder.mutation<Coupon, Partial<Coupon>>({
+      query: (body) => ({
         url: "/admin/coupons",
         method: "POST",
-        body: coupon,
+        body,
       }),
       invalidatesTags: ["AdminCoupons"],
     }),
-    toggleCoupon: builder.mutation<any, { id: number }>({
+    toggleCoupon: builder.mutation<Coupon, { id: number }>({
       query: ({ id }) => ({
         url: `/admin/coupons/${id}/toggle`,
         method: "PATCH",
       }),
       invalidatesTags: ["AdminCoupons"],
     }),
-    deleteCoupon: builder.mutation<any, { id: number }>({
-      query: ({ id }) => ({
-        url: `/admin/coupons/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["AdminCoupons"],
-    }),
+    deleteCoupon: builder.mutation<{ ok: boolean; id: number }, { id: number }>(
+      {
+        query: ({ id }) => ({
+          url: `/admin/coupons/${id}`,
+          method: "DELETE",
+        }),
+        invalidatesTags: ["AdminCoupons"],
+      },
+    ),
     getAdminSettings: builder.query<Record<string, string>, void>({
       query: () => "/admin/settings",
       providesTags: ["AdminSettings"],
     }),
-    updateAdminSettings: builder.mutation<any, Record<string, string>>({
-      query: (settings) => ({
+    updateAdminSettings: builder.mutation<
+      { ok: boolean },
+      Record<string, string>
+    >({
+      query: (body) => ({
         url: "/admin/settings",
         method: "PUT",
-        body: settings,
+        body,
       }),
       invalidatesTags: ["AdminSettings"],
     }),
-    getAdminOrders: builder.query<any[], void>({
+    getAdminOrders: builder.query<AdminOrder[], void>({
       query: () => "/admin/orders",
       providesTags: ["AdminOrders"],
     }),
-    updateOrderStatus: builder.mutation<any, { id: string; status: string }>({
-      query: ({ id, status }) => ({
-        url: `/admin/orders/${id}/status`,
+    updateOrderStatus: builder.mutation<
+      AdminOrder,
+      { orderId: string; status: string; note?: string }
+    >({
+      query: ({ orderId, ...body }) => ({
+        url: `/admin/orders/${orderId}/status`,
         method: "PATCH",
-        body: { status },
+        body,
       }),
-      invalidatesTags: ["AdminOrders", "AdminOverview", "Orders"],
+      invalidatesTags: ["AdminOrders", "AdminOverview"],
     }),
-    getAdminSupport: builder.query<any[], void>({
+    getAdminSupport: builder.query<SupportMessage[], void>({
       query: () => "/admin/support",
       providesTags: ["AdminSupport"],
     }),
-    updateSupportStatus: builder.mutation<any, { id: number; status: string }>({
-      query: ({ id, status }) => ({
-        url: `/admin/support/${id}`,
+    updateSupportStatus: builder.mutation<
+      { ok: boolean },
+      { messageId: number; status: string; notes?: string }
+    >({
+      query: ({ messageId, ...body }) => ({
+        url: `/admin/support/${messageId}/status`,
         method: "PATCH",
-        body: { status },
+        body,
       }),
       invalidatesTags: ["AdminSupport"],
     }),
