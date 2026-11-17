@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import TopBar from "../components/TopBar";
 import Navbar from "../components/layout/Navbar";
@@ -12,10 +12,46 @@ import { type Product } from "../data/products";
 import { useGetProductsQuery } from "../store/api/apiSlice";
 import { ProductSkeletonGrid } from "../components/product/ProductSkeleton";
 
+const LIFESTYLE_CATEGORY_NAMES = new Set([
+  "furniture",
+  "home & living",
+  "home-living",
+  "kitchen & dining",
+  "kitchen-dining",
+  "garden & outdoor",
+  "garden-outdoor",
+  "beauty & personal care",
+  "beauty & skincare",
+  "beauty-personal-care",
+  "fashion & accessories",
+  "fashion-accessories",
+  "fashion",
+  "clothing",
+  "bags",
+  "shoes",
+  "home decor",
+  "bedsheets",
+]);
+
+function isFoodProduct(product: Product): boolean {
+  if (!product) return false;
+  const anyP = product as unknown as { lifestyleId?: string };
+  if (anyP.lifestyleId || /^PROD-(FURN|HOME|KITCH|GARD|BEAU|FASH)/i.test(product.id)) {
+    return false;
+  }
+  const category = (product.category || "").trim().toLowerCase();
+  if (LIFESTYLE_CATEGORY_NAMES.has(category)) {
+    return false;
+  }
+  return true;
+}
+
 function Shop() {
   const [page, setPage] = useState(1);
   const { data: serverProducts, isLoading, isError, refetch } = useGetProductsQuery();
-  const allProducts = (serverProducts || []) as unknown as Product[];
+  const allProducts = useMemo(() => {
+    return ((serverProducts || []) as unknown as Product[]).filter(isFoodProduct);
+  }, [serverProducts]);
   const paged = paginateItems(allProducts, page);
 
   function changePage(nextPage: number) {

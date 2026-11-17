@@ -46,14 +46,21 @@ function AccountSettingsModals({
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<{ current?: string; next?: string; confirm?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{
+    current?: string;
+    next?: string;
+    confirm?: string;
+  }>({});
   const [generalError, setGeneralError] = useState("");
 
   async function submitPassword(event: FormEvent) {
     event.preventDefault();
 
     try {
-      await changePasswordSchema.validate({ current, next, confirm }, { abortEarly: false });
+      await changePasswordSchema.validate(
+        { current, next, confirm },
+        { abortEarly: false },
+      );
       setFieldErrors({});
     } catch (err: any) {
       if (err instanceof yup.ValidationError) {
@@ -90,21 +97,29 @@ function AccountSettingsModals({
 
   return (
     <>
-      <AccountModal open={passwordOpen} title="Change Password" onClose={onClose}>
+      <AccountModal
+        open={passwordOpen}
+        title="Change Password"
+        onClose={onClose}
+      >
         <form className="account-form" onSubmit={submitPassword} noValidate>
           <label>
             Current Password
             <input
               type="password"
               value={current}
-              style={{ borderColor: fieldErrors.current ? "#ef4444" : undefined }}
+              style={{
+                borderColor: fieldErrors.current ? "#ef4444" : undefined,
+              }}
               onChange={(event) => {
                 setCurrent(event.target.value);
                 setFieldErrors((prev) => ({ ...prev, current: undefined }));
               }}
             />
             {fieldErrors.current && (
-              <span style={{ color: "#ef4444", fontSize: 11, display: "block" }}>
+              <span
+                style={{ color: "#ef4444", fontSize: 11, display: "block" }}
+              >
                 {fieldErrors.current}
               </span>
             )}
@@ -121,7 +136,9 @@ function AccountSettingsModals({
               }}
             />
             {fieldErrors.next && (
-              <span style={{ color: "#ef4444", fontSize: 11, display: "block" }}>
+              <span
+                style={{ color: "#ef4444", fontSize: 11, display: "block" }}
+              >
                 {fieldErrors.next}
               </span>
             )}
@@ -131,19 +148,25 @@ function AccountSettingsModals({
             <input
               type="password"
               value={confirm}
-              style={{ borderColor: fieldErrors.confirm ? "#ef4444" : undefined }}
+              style={{
+                borderColor: fieldErrors.confirm ? "#ef4444" : undefined,
+              }}
               onChange={(event) => {
                 setConfirm(event.target.value);
                 setFieldErrors((prev) => ({ ...prev, confirm: undefined }));
               }}
             />
             {fieldErrors.confirm && (
-              <span style={{ color: "#ef4444", fontSize: 11, display: "block" }}>
+              <span
+                style={{ color: "#ef4444", fontSize: 11, display: "block" }}
+              >
                 {fieldErrors.confirm}
               </span>
             )}
           </label>
-          {generalError ? <p className="account-form-error">{generalError}</p> : null}
+          {generalError ? (
+            <p className="account-form-error">{generalError}</p>
+          ) : null}
           <p className="account-login-note">
             Passwords must be at least 8 characters.
           </p>

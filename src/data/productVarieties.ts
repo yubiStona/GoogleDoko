@@ -9,6 +9,10 @@ export interface ProductVariety {
   origin: string;
   seller: string;
   description: string;
+  viewTransform?: {
+    transform?: string;
+    objectPosition?: string;
+  };
 }
 
 export type ProductAngle = ProductVariety;
@@ -968,7 +972,9 @@ export const productVarietiesMap: Record<string, ProductVariety[]> = {
 };
 
 /**
- * Returns 4 distinct angle views for any product based on its name or category.
+ * Returns 4 distinct angle views for any product based on its name.
+ * If the product is not one of the pre-set catalog items, it generates
+ * authentic angle views using the product's own uploaded images and details.
  */
 export function getProductVarieties(product: {
   id: string;
@@ -980,130 +986,127 @@ export function getProductVarieties(product: {
   seller?: string;
   image?: string;
   gallery?: string[];
+  description?: string;
 }): ProductVariety[] {
   const name = product.name || '';
   const normalized = name.toLowerCase().trim();
 
-  // 1. Direct key match
+  // Helper: word boundary match to prevent "eggplant" matching "egg", "grape" matching "ape", etc.
+  const hasWord = (word: string) => {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|\\s|[_-])${escaped}(\\s|[_-]|$)`, 'i').test(normalized);
+  };
+
+  // 1. Direct whole-word match on catalog keys (only if name specifically represents this item)
   for (const [key, list] of Object.entries(productVarietiesMap)) {
-    if (normalized.includes(key.toLowerCase())) {
+    if (hasWord(key)) {
       return list;
     }
   }
 
-  // 2. Keyword fallback checks
-  if (normalized.includes('apple') || normalized.includes('seb')) {
-    return productVarietiesMap.Apple;
-  }
-  if (normalized.includes('honey') || normalized.includes('maha')) {
-    return productVarietiesMap.Honey;
-  }
-  if (normalized.includes('orange') || normalized.includes('suntala')) {
-    return productVarietiesMap.Orange;
-  }
-  if (normalized.includes('avocado')) {
-    return productVarietiesMap.Avocado;
-  }
-  if (normalized.includes('banana') || normalized.includes('kera')) {
-    return productVarietiesMap.Banana;
-  }
-  if (normalized.includes('tomato') || normalized.includes('golbheda')) {
-    return productVarietiesMap.Tomato;
-  }
-  if (normalized.includes('potato') || normalized.includes('alu')) {
-    return productVarietiesMap.Potato;
-  }
-  if (normalized.includes('spinach') || normalized.includes('palak')) {
-    return productVarietiesMap.Spinach;
-  }
-  if (normalized.includes('turmeric') || normalized.includes('haldi') || normalized.includes('besar')) {
-    return productVarietiesMap.Turmeric;
-  }
-  if (normalized.includes('chili') || normalized.includes('chilli') || normalized.includes('khursani')) {
-    return productVarietiesMap.Chili;
-  }
-  if (normalized.includes('cumin') || normalized.includes('jeera')) {
-    return productVarietiesMap.Cumin;
-  }
-  if (normalized.includes('milk') || normalized.includes('dudh')) {
-    return productVarietiesMap.Milk;
-  }
-  if (normalized.includes('egg')) {
-    return productVarietiesMap.Eggs;
-  }
-  if (normalized.includes('yogurt') || normalized.includes('curd') || normalized.includes('dahi')) {
-    return productVarietiesMap.Yogurt;
-  }
-  if (normalized.includes('rice') || normalized.includes('chamal')) {
-    return productVarietiesMap.Rice;
-  }
-  if (normalized.includes('wheat') || normalized.includes('atta')) {
-    return productVarietiesMap.Wheat;
-  }
-  if (normalized.includes('lentil') || normalized.includes('dal')) {
-    return productVarietiesMap.Lentils;
-  }
+  // 2. Exact keyword checks with word boundary
+  if (hasWord('apple') || hasWord('seb')) return productVarietiesMap.Apple;
+  if (hasWord('honey') || hasWord('maha')) return productVarietiesMap.Honey;
+  if (hasWord('orange') || hasWord('suntala')) return productVarietiesMap.Orange;
+  if (hasWord('avocado')) return productVarietiesMap.Avocado;
+  if (hasWord('banana') || hasWord('kera')) return productVarietiesMap.Banana;
+  if (hasWord('tomato') || hasWord('golbheda')) return productVarietiesMap.Tomato;
+  if (hasWord('potato') || hasWord('alu')) return productVarietiesMap.Potato;
+  if (hasWord('spinach') || hasWord('palak')) return productVarietiesMap.Spinach;
+  if (hasWord('turmeric') || hasWord('haldi') || hasWord('besar')) return productVarietiesMap.Turmeric;
+  if (hasWord('chili') || hasWord('chilli') || hasWord('khursani')) return productVarietiesMap.Chili;
+  if (hasWord('cumin') || hasWord('jeera')) return productVarietiesMap.Cumin;
+  if (hasWord('milk') || hasWord('dudh')) return productVarietiesMap.Milk;
+  if (hasWord('egg') || hasWord('eggs')) return productVarietiesMap.Eggs;
+  if (hasWord('yogurt') || hasWord('curd') || hasWord('dahi')) return productVarietiesMap.Yogurt;
+  if (hasWord('rice') || hasWord('chamal')) return productVarietiesMap.Rice;
+  if (hasWord('wheat') || hasWord('atta')) return productVarietiesMap.Wheat;
+  if (hasWord('lentil') || hasWord('lentils') || hasWord('dal')) return productVarietiesMap.Lentils;
 
-  // 3. Category match fallback
-  const category = (product.category || '').toLowerCase();
-  if (category.includes('fruit')) return productVarietiesMap.Apple;
-  if (category.includes('veg')) return productVarietiesMap.Tomato;
-  if (category.includes('spice')) return productVarietiesMap.Chili;
-  if (category.includes('dairy')) return productVarietiesMap.Milk;
-  if (category.includes('grain')) return productVarietiesMap.Rice;
-  if (category.includes('honey')) return productVarietiesMap.Honey;
-
-  // 4. Fallback: generate 4 angle cubes from product details
+  // 3. Fallback: generate 4 perspective angle varieties from product's image/gallery
   const baseImg = product.image || '/src/frontend/assets/images/organic-vegetables.jpg';
-  const gallery = product.gallery && product.gallery.length > 0 ? product.gallery : [baseImg];
+  const rawGallery = Array.isArray(product.gallery) && product.gallery.length > 0
+    ? product.gallery
+    : [baseImg];
+
+  // Deduplicate distinct images while preserving insertion order
+  const distinctImages: string[] = [];
+  for (const img of [product.image, ...rawGallery].filter(Boolean) as string[]) {
+    if (!distinctImages.includes(img)) {
+      distinctImages.push(img);
+    }
+  }
+  if (distinctImages.length === 0) {
+    distinctImages.push(baseImg);
+  }
+
+  const desc =
+    product.description ||
+    `${product.name} sourced fresh from trusted local growers using natural farming practices.`;
+
+  const hasMultipleDistinctFiles = distinctImages.length >= 4;
+
   return [
     {
       id: `${product.id}-angle-front`,
       name: 'Front View',
       title: product.name,
-      image: gallery[0] || baseImg,
-      thumb: gallery[0] || baseImg,
-      price: product.price || 150,
+      image: distinctImages[0] || baseImg,
+      thumb: distinctImages[0] || baseImg,
+      price: product.price || 0,
       weight: product.weight || '1 kg',
       origin: product.origin || 'Nepal',
       seller: product.seller || 'Local Farm',
-      description: `${product.name} sourced fresh from trusted local growers using natural farming practices.`,
+      description: desc,
+      viewTransform: {
+        transform: 'scale(1)',
+        objectPosition: 'center center',
+      },
     },
     {
       id: `${product.id}-angle-closeup`,
       name: 'Close-up',
       title: product.name,
-      image: gallery[1 % gallery.length] || baseImg,
-      thumb: gallery[1 % gallery.length] || baseImg,
-      price: product.price || 150,
+      image: distinctImages[1 % distinctImages.length] || baseImg,
+      thumb: distinctImages[1 % distinctImages.length] || baseImg,
+      price: product.price || 0,
       weight: product.weight || '1 kg',
       origin: product.origin || 'Nepal',
       seller: product.seller || 'Local Farm',
-      description: `${product.name} sourced fresh from trusted local growers using natural farming practices.`,
+      description: desc,
+      viewTransform: hasMultipleDistinctFiles
+        ? { transform: 'scale(1)', objectPosition: 'center center' }
+        : { transform: 'scale(1.6)', objectPosition: 'center center' },
     },
     {
       id: `${product.id}-angle-cut`,
       name: 'Cut Section',
       title: product.name,
-      image: gallery[2 % gallery.length] || baseImg,
-      thumb: gallery[2 % gallery.length] || baseImg,
-      price: product.price || 150,
+      image: distinctImages[2 % distinctImages.length] || baseImg,
+      thumb: distinctImages[2 % distinctImages.length] || baseImg,
+      price: product.price || 0,
       weight: product.weight || '1 kg',
       origin: product.origin || 'Nepal',
       seller: product.seller || 'Local Farm',
-      description: `${product.name} sourced fresh from trusted local growers using natural farming practices.`,
+      description: desc,
+      viewTransform: hasMultipleDistinctFiles
+        ? { transform: 'scale(1)', objectPosition: 'center center' }
+        : { transform: 'scale(1.4)', objectPosition: 'center 35%' },
     },
     {
       id: `${product.id}-angle-top`,
       name: 'Top Angle',
       title: product.name,
-      image: gallery[3 % gallery.length] || baseImg,
-      thumb: gallery[3 % gallery.length] || baseImg,
-      price: product.price || 150,
+      image: distinctImages[3 % distinctImages.length] || baseImg,
+      thumb: distinctImages[3 % distinctImages.length] || baseImg,
+      price: product.price || 0,
       weight: product.weight || '1 kg',
       origin: product.origin || 'Nepal',
       seller: product.seller || 'Local Farm',
-      description: `${product.name} sourced fresh from trusted local growers using natural farming practices.`,
+      description: desc,
+      viewTransform: hasMultipleDistinctFiles
+        ? { transform: 'scale(1)', objectPosition: 'center center' }
+        : { transform: 'scale(1.35)', objectPosition: 'center 12%' },
     },
   ];
 }

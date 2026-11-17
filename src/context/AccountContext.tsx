@@ -378,13 +378,16 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const registerAdmin = useCallback(
     async (input: { fullName: string; email: string; password: string; securityKey: string }) => {
       try {
-        await api.registerAdmin(input);
+        const payload = await api.registerAdmin(input);
+        if (payload && payload.token) {
+          applyPayload(payload, true);
+        }
         return null;
       } catch (error) {
         return error instanceof Error ? error.message : "Could not create admin account";
       }
     },
-    [],
+    [applyPayload],
   );
 
   const value = useMemo<AccountContextValue>(

@@ -13,7 +13,6 @@ import {
   LayoutDashboard,
   Compass,
   Package,
-  Sparkles,
 } from "lucide-react";
 
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -34,10 +33,11 @@ function Navbar() {
   const { isLoggedIn, user, logout } = useAccount();
   const userPhoto = user.photo || "";
   const [imageError, setImageError] = useState(false);
-
-  useEffect(() => {
+  const [prevUserPhoto, setPrevUserPhoto] = useState(userPhoto);
+  if (userPhoto !== prevUserPhoto) {
+    setPrevUserPhoto(userPhoto);
     setImageError(false);
-  }, [userPhoto]);
+  }
 
   const accountHref =
     isLoggedIn && user.role === "admin"
@@ -79,17 +79,20 @@ function Navbar() {
     location.pathname.startsWith("/places") ||
     location.pathname.startsWith("/lifestyle");
 
-  useEffect(() => {
-    if (location.pathname === "/search") {
-      setQuery(searchParams.get("q") ?? "");
-    }
-  }, [location.pathname, searchParams]);
+  const [prevSearchQ, setPrevSearchQ] = useState<string | null>(null);
+  const currentSearchQ = location.pathname === "/search" ? searchParams.get("q") ?? "" : null;
+  if (currentSearchQ !== null && currentSearchQ !== prevSearchQ) {
+    setPrevSearchQ(currentSearchQ);
+    setQuery(currentSearchQ);
+  }
 
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(location.pathname);
+  if (location.pathname !== prevPathname) {
+    setPrevPathname(location.pathname);
     setMenuOpen(false);
     setCategoriesOpen(false);
     setAccountOpen(false);
-  }, [location.pathname]);
+  }
 
   useEffect(() => {
     document.body.classList.add("has-site-nav");
@@ -210,7 +213,7 @@ function Navbar() {
     <>
       <nav className="navbar">
         <div className={`navbar-container${menuOpen ? " menu-open" : ""}`}>
-          <Link to="/" className="logo">
+          <Link to="/food" className="logo">
             <LogoMark className="logo-icon" decorative />
             <div className="logo-text-group">
               <span className="logo-brand">GoogleDoko</span>
@@ -220,9 +223,10 @@ function Navbar() {
 
           <div className="nav-links" id="site-nav-links">
             <NavLink
-              to="/"
-              end
-              className={({ isActive }) => `nav-home-link ${isActive ? "active" : ""}`}
+              to="/food"
+              className={({ isActive }) =>
+                `nav-home-link ${isActive || location.pathname === "/food" ? "active" : ""}`
+              }
             >
               Home
             </NavLink>
@@ -283,19 +287,6 @@ function Navbar() {
                   >
                     <MapPin size={16} className="nav-dropdown-item-icon" />
                     <span>Shop by Place</span>
-                  </NavLink>
-                  <NavLink
-                    to="/lifestyle"
-                    className={({ isActive }) => (isActive ? "active" : "")}
-                    onClick={() => {
-                      setCategoriesOpen(false);
-                      if (categoriesTimeoutRef.current) {
-                        clearTimeout(categoriesTimeoutRef.current);
-                      }
-                    }}
-                  >
-                    <Sparkles size={16} className="nav-dropdown-item-icon" />
-                    <span>Shop by Lifestyle</span>
                   </NavLink>
                 </div>
               </div>
@@ -493,7 +484,7 @@ function Navbar() {
               <X size={22} />
             </button>
           </div>
-          <NavLink to="/" end onClick={closeMenu}>
+          <NavLink to="/food" end onClick={closeMenu}>
             <House size={18} />
             Home
           </NavLink>
@@ -504,10 +495,6 @@ function Navbar() {
           <NavLink to="/places" onClick={closeMenu}>
             <Compass size={18} />
             Shop by Place
-          </NavLink>
-          <NavLink to="/lifestyle" onClick={closeMenu}>
-            <Sparkles size={18} />
-            Shop by Lifestyle
           </NavLink>
           <NavLink to="/orders" onClick={closeMenu}>
             <Package size={18} />

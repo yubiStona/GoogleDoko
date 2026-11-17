@@ -4,7 +4,6 @@ import Hero from "../components/Hero";
 import Benefits from "../components/Benefits";
 import SpecialOffers from "../components/SpecialOffers";
 import ShopByLocalAreas from "../components/ShopByLocalAreas";
-import ShopByLifestyle from "../components/ShopByLifestyle";
 import Categories from "../components/Categories";
 import PopularProducts from "../components/PopularProducts";
 import HowItWorks from "../components/HowItWorks";
@@ -31,8 +30,6 @@ function Home() {
         <SpecialOffers />
 
         <ShopByLocalAreas />
-
-        <ShopByLifestyle />
 
         <Categories />
 

@@ -100,8 +100,20 @@ export function isLifestyleCategory(category?: string): boolean {
     c.includes("shoe") ||
     c.includes("decor") ||
     c.includes("garden") ||
-    c.includes("beauty")
+    c.includes("outdoor") ||
+    c.includes("beauty") ||
+    c.includes("skincare") ||
+    c.includes("bedsheet")
   );
+}
+
+export function isLifestyleProduct(product: any): boolean {
+  if (!product) return false;
+  if (product.lifestyleId) return true;
+  if (typeof product.id === "string" && /^PROD-(FURN|HOME|KITCH|GARD|BEAU|FASH)/i.test(product.id)) {
+    return true;
+  }
+  return isLifestyleCategory(product.category);
 }
 
 export function resolveProductSellingUnit(

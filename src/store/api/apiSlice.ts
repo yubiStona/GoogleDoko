@@ -1,5 +1,5 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import baseQuery from "../baseQuery";
+import baseQuery from "./baseQuery";
 import type {
   Product,
   User,
@@ -69,7 +69,7 @@ export const apiSlice = createApi({
       providesTags: ["Products"],
     }),
     getPopularProducts: builder.query<Product[], number | void>({
-      query: (limit = 8) => `/products/popular?limit=${limit}`,
+      query: (limit = 8) => `/products/popular?limit=${limit}&excludeLifestyle=true`,
       providesTags: ["Products"],
     }),
     getFeaturedProducts: builder.query<Product[], number | void>({
@@ -81,7 +81,7 @@ export const apiSlice = createApi({
       providesTags: ["Products"],
     }),
     getCategories: builder.query<ApiCategory[], void>({
-      query: () => "/categories",
+      query: () => "/categories?excludeLifestyle=true",
       providesTags: ["Categories"],
     }),
     getPlaces: builder.query<ApiPlace[], void>({

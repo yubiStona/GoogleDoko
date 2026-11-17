@@ -15,6 +15,7 @@ import { searchPlaces } from "../data/search";
 import { api } from "../api/client";
 import type { Product } from "../data/products";
 import { useGetPlacesQuery } from "../store/api/apiSlice";
+import { isLifestyleProduct } from "../utils/productUnits";
 
 function Search() {
   const [searchParams] = useSearchParams();
@@ -53,7 +54,7 @@ function Search() {
           weight: r.weight,
           stock: r.stock,
           gallery: [r.image],
-        })) as Product[];
+        })).filter((p: any) => !isLifestyleProduct(p)) as Product[];
         setApiProducts(mapped);
       })
       .catch(() => setApiProducts([]))

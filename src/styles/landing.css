@@ -1,0 +1,606 @@
+/* ==========================================================================
+   GOOGLE DOKO - LANDING PAGE STYLES (TOTAL FIDELITY TO SCREENSHOT 2)
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap");
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.landing-page-root {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #fbf8f3;
+  color: #111827;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================================================
+   CANVAS CONTAINER (16:9 PROPORTIONAL FIT FOR ANY VIEWPORT)
+   ========================================================================== */
+
+.landing-canvas-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fbf8f3;
+  overflow: hidden;
+}
+
+.landing-canvas-inner {
+  position: relative;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
+  aspect-ratio: 16 / 9;
+  margin: auto;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.05);
+}
+
+.landing-canvas-artwork {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ==========================================================================
+   SELECTABLE TEXT UTILITY (PREVENTS GHOST SELECTION OVER ARTWORK)
+   ========================================================================== */
+
+.landing-canvas-inner,
+.landing-selectable-text {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.landing-selectable-text {
+  color: transparent;
+  cursor: default;
+  display: inline;
+}
+
+.landing-selectable-text::selection {
+  background: transparent;
+  color: transparent;
+}
+
+/* ==========================================================================
+   TOP HEADER (REAL HTML SELECTABLE LOGO & NAV)
+   ========================================================================== */
+
+.landing-canvas-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 10%;
+  z-index: 20;
+}
+
+/* Logo */
+.landing-canvas-logo-link {
+  position: absolute;
+  left: 3.5%;
+  top: 22%;
+  width: 24.0%;
+  height: 85%;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.landing-canvas-logo-link:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.01);
+}
+
+/* Nav Links */
+.landing-canvas-nav {
+  position: absolute;
+  left: 38.5%;
+  top: 25%;
+  width: 25.0%;
+  height: 70%;
+  display: flex;
+  align-items: center;
+}
+
+.landing-nav-link-item {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.landing-nav-home {
+  left: 4.0%;
+  width: 27.0%;
+  height: 75%;
+}
+
+.landing-nav-home:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: scale(1.04);
+}
+
+.landing-nav-about {
+  left: 37.0%;
+  width: 25.0%;
+  height: 75%;
+}
+
+.landing-nav-about:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.04);
+}
+
+.landing-nav-contact {
+  left: 67.0%;
+  width: 28.0%;
+  height: 75%;
+}
+
+.landing-nav-contact:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.04);
+}
+
+/* Actions */
+.landing-canvas-actions {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 15%;
+  height: 100%;
+}
+
+.landing-action-icon-link {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.landing-action-search {
+  left: 35%;
+  top: 30%;
+  width: 27%;
+  height: 60%;
+}
+
+.landing-action-search:hover {
+  background: rgba(0, 0, 0, 0.06);
+  transform: scale(1.1);
+}
+
+.landing-action-cart {
+  left: 64%;
+  top: 28%;
+  width: 29%;
+  height: 62%;
+}
+
+.landing-action-cart:hover {
+  background: rgba(0, 0, 0, 0.06);
+  transform: scale(1.1);
+}
+
+.landing-cart-dynamic-badge {
+  position: absolute;
+  top: 0;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background-color: #dc2626;
+  color: #ffffff;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(220, 38, 38, 0.4);
+}
+
+/* ==========================================================================
+   CENTRAL HEADLINE OVERLAY (REAL HTML SELECTABLE TEXT)
+   ========================================================================== */
+
+.landing-headline-overlay {
+  position: absolute;
+  top: 12.0%;
+  left: 23%;
+  width: 54%;
+  text-align: center;
+  z-index: 15;
+}
+
+.landing-top-tagline {
+  font-size: clamp(12px, 1.4vw, 15px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.landing-main-title {
+  font-size: clamp(26px, 3.8vw, 42px);
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  margin: 0 0 2px 0;
+  line-height: 1.15;
+}
+
+.landing-sub-tagline {
+  font-family: "Caveat", cursive, sans-serif;
+  font-size: clamp(19px, 2.3vw, 26px);
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+/* ==========================================================================
+   FOOD CARD OVERLAY (REAL HTML TEXT & BUTTON)
+   ========================================================================== */
+
+.landing-food-card-overlay {
+  position: absolute;
+  left: 0.8%;
+  top: 36.5%;
+  width: 49.0%;
+  height: 52.5%;
+  z-index: 15;
+  cursor: pointer;
+  border-radius: 36px;
+  transition: all 0.22s ease;
+}
+
+.landing-food-card-overlay:hover {
+  filter: drop-shadow(0 8px 24px rgba(21, 77, 42, 0.22));
+}
+
+.landing-food-text-block {
+  position: absolute;
+  left: 10.5%;
+  top: 9%;
+  width: 42%;
+}
+
+.landing-food-word {
+  font-family: "Caveat", cursive, sans-serif;
+  font-size: clamp(38px, 5.6vw, 64px);
+  font-weight: 700;
+  line-height: 0.92;
+  margin-bottom: 2px;
+}
+
+.landing-food-subtitle {
+  font-family: "Caveat", cursive, sans-serif;
+  font-size: clamp(16px, 2.0vw, 24px);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.landing-food-desc {
+  font-size: clamp(10.5px, 1.25vw, 13.5px);
+  line-height: 1.45;
+  margin: 0 0 18px 0;
+  max-width: 220px;
+}
+
+.landing-btn-food {
+  position: absolute;
+  left: 10.5%;
+  top: 75.5%;
+  width: 27.5%;
+  height: 12.0%;
+  border-radius: 9999px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: clamp(11.5px, 1.3vw, 14px);
+  font-weight: 700;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.landing-food-card-overlay:hover .landing-btn-food,
+.landing-btn-food:hover {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.landing-btn-food:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* ==========================================================================
+   LIFESTYLE CARD OVERLAY (REAL HTML TEXT & BUTTON)
+   ========================================================================== */
+
+.landing-lifestyle-card-overlay {
+  position: absolute;
+  left: 50.8%;
+  top: 36.5%;
+  width: 48.5%;
+  height: 52.5%;
+  z-index: 15;
+  cursor: pointer;
+  border-radius: 36px;
+  transition: all 0.22s ease;
+}
+
+.landing-lifestyle-card-overlay:hover {
+  filter: drop-shadow(0 8px 24px rgba(234, 88, 12, 0.22));
+}
+
+.landing-lifestyle-text-block {
+  position: absolute;
+  left: 6.5%;
+  top: 9%;
+  width: 42%;
+}
+
+.landing-lifestyle-word {
+  font-family: "Caveat", cursive, sans-serif;
+  font-size: clamp(38px, 5.6vw, 64px);
+  font-weight: 700;
+  line-height: 0.92;
+  margin-bottom: 2px;
+}
+
+.landing-lifestyle-subtitle {
+  font-family: "Caveat", cursive, sans-serif;
+  font-size: clamp(16px, 2.0vw, 24px);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.landing-lifestyle-desc {
+  font-size: clamp(10.5px, 1.25vw, 13.5px);
+  line-height: 1.45;
+  margin: 0 0 18px 0;
+  max-width: 220px;
+}
+
+.landing-btn-lifestyle {
+  position: absolute;
+  left: 6.5%;
+  top: 75.5%;
+  width: 31.0%;
+  height: 12.0%;
+  border-radius: 9999px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: clamp(11.5px, 1.3vw, 14px);
+  font-weight: 700;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.landing-lifestyle-card-overlay:hover .landing-btn-lifestyle,
+.landing-btn-lifestyle:hover {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.5);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.landing-btn-lifestyle:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* ==========================================================================
+   SCROLL DOWN BUTTON (REAL HTML SELECTABLE BUTTON)
+   ========================================================================== */
+
+.landing-scroll-button {
+  position: absolute;
+  left: 46.5%;
+  top: 89.0%;
+  width: 7.0%;
+  height: 9.5%;
+  z-index: 15;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 2px;
+}
+
+.landing-scroll-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: translateY(2px);
+}
+
+/* ==========================================================================
+   COMING SOON MODAL
+   ========================================================================== */
+
+.landing-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(17, 24, 39, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: landingFadeIn 0.25s ease-out;
+}
+
+@keyframes landingFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.landing-modal-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 32px 48px;
+  max-width: 320px;
+  width: auto;
+  text-align: center;
+  box-shadow:
+    0 24px 60px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  animation: landingScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes landingScaleUp {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.landing-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.landing-modal-close:hover {
+  background: #e5e7eb;
+  color: #111827;
+  transform: rotate(90deg);
+}
+
+.landing-modal-icon-badge {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ea580c, #f97316);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  margin: 0 auto 18px auto;
+  box-shadow: 0 10px 25px rgba(234, 88, 12, 0.35);
+}
+
+.landing-modal-sparkle-icon {
+  animation: landingPulse 2s ease-in-out infinite;
+}
+
+@keyframes landingPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+.landing-modal-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.4px;
+  margin: 0;
+  padding: 4px 8px;
+}
+
+.landing-modal-desc {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: #4b5563;
+  margin: 0 0 24px 0;
+}
+
+.landing-modal-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.landing-modal-btn-confirm {
+  background: #154d2a;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 12px 36px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(21, 77, 42, 0.3);
+  transition: all 0.2s ease;
+}
+
+.landing-modal-btn-confirm:hover {
+  background: #0f381e;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(21, 77, 42, 0.4);
+}
+
+.landing-modal-btn-confirm:active {
+  transform: translateY(0);
+}
