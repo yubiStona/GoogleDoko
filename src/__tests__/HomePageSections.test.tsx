@@ -40,7 +40,7 @@ function renderHomeWithProviders() {
   );
 }
 
-describe("Home Page Sections: Shop by Local Areas & Shop by Lifestyle", () => {
+describe("Home Page Sections: Shop by Local Areas & Food Focus", () => {
   it("renders 'Shop by Local Areas' after 'Special Offers'", () => {
     const { container } = renderHomeWithProviders();
 
@@ -65,27 +65,33 @@ describe("Home Page Sections: Shop by Local Areas & Shop by Lifestyle", () => {
     expect(isAfterOffers).toBeTruthy();
   });
 
-  it("renders 'Shop by Lifestyle' after 'Shop by Local Areas'", () => {
+  it("renders 'Shop By Categories' after 'Shop by Local Areas' for pure food experience", () => {
     const { container } = renderHomeWithProviders();
 
-    const lifestyleHeading = screen.getByRole("heading", { name: /Shop by Lifestyle/i });
-    expect(lifestyleHeading).toBeInTheDocument();
+    const categoriesHeading = screen.getByRole("heading", { name: /Shop By Categories/i });
+    expect(categoriesHeading).toBeInTheDocument();
 
-    // Check lifestyle categories
-    expect(screen.getByText("Furniture")).toBeInTheDocument();
-    expect(screen.getByText("Home & Living")).toBeInTheDocument();
-    expect(screen.getByText("Kitchen & Dining")).toBeInTheDocument();
-    expect(screen.getByText("Fashion & Accessories")).toBeInTheDocument();
-
-    // Verify ordering in DOM: local areas -> lifestyle
+    // Verify ordering in DOM: local areas -> categories
     const localAreasSection = container.querySelector(".shop-by-local-areas-section");
-    const lifestyleSection = container.querySelector(".shop-by-lifestyle-section");
+    const categoriesSection = container.querySelector(".categories-section");
     expect(localAreasSection).toBeTruthy();
-    expect(lifestyleSection).toBeTruthy();
+    expect(categoriesSection).toBeTruthy();
 
     const isAfterLocalAreas =
-      localAreasSection!.compareDocumentPosition(lifestyleSection!) &
+      localAreasSection!.compareDocumentPosition(categoriesSection!) &
       Node.DOCUMENT_POSITION_FOLLOWING;
     expect(isAfterLocalAreas).toBeTruthy();
+  });
+
+  it("ensures Most Popular Items displays food products and excludes lifestyle products", () => {
+    renderHomeWithProviders();
+
+    const popularHeading = screen.getByRole("heading", { name: /Most Popular Items/i });
+    expect(popularHeading).toBeInTheDocument();
+
+    // Verify lifestyle products are NOT displayed in Most Popular Items
+    expect(screen.queryByText(/Handcrafted Sisau Wood Dining Table/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Classic Organic Cotton T-Shirt/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Organic Turmeric & Sandalwood/i)).not.toBeInTheDocument();
   });
 });

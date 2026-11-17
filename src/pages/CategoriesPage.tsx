@@ -24,6 +24,45 @@ const defaultCategoryOptions = [
     "Honey",
 ];
 
+const LIFESTYLE_CATEGORY_NAMES = new Set([
+    "furniture",
+    "home & living",
+    "home-living",
+    "kitchen & dining",
+    "kitchen-dining",
+    "garden & outdoor",
+    "garden-outdoor",
+    "beauty & personal care",
+    "beauty & skincare",
+    "beauty-personal-care",
+    "fashion & accessories",
+    "fashion-accessories",
+    "fashion",
+    "clothing",
+    "bags",
+    "shoes",
+    "home decor",
+    "bedsheets",
+]);
+
+function isFoodCategory(categoryName: string): boolean {
+    if (!categoryName) return false;
+    return !LIFESTYLE_CATEGORY_NAMES.has(categoryName.trim().toLowerCase());
+}
+
+function isFoodProduct(product: Product): boolean {
+    if (!product) return false;
+    const anyP = product as unknown as { lifestyleId?: string };
+    if (anyP.lifestyleId || /^PROD-(FURN|HOME|KITCH|GARD|BEAU|FASH)/i.test(product.id)) {
+        return false;
+    }
+    const category = (product.category || "").trim().toLowerCase();
+    if (LIFESTYLE_CATEGORY_NAMES.has(category)) {
+        return false;
+    }
+    return true;
+}
+
 function CategoriesPage() {
     const [searchParams] = useSearchParams();
     const categoryFromUrl = searchParams.get("category");
@@ -34,21 +73,28 @@ function CategoriesPage() {
 
     const categoryOptions = useMemo(() => {
         if (serverCategories && serverCategories.length > 0) {
-            return ["All", ...serverCategories.map((c: any) => c.name)];
+            const foodCats = serverCategories
+                .map((c: any) => c.name)
+                .filter(isFoodCategory);
+            return ["All", ...foodCats];
         }
         return defaultCategoryOptions;
     }, [serverCategories]);
 
-    const allProducts = (serverProducts || []) as unknown as Product[];
+    const allProducts = useMemo(() => {
+        return ((serverProducts || []) as unknown as Product[]).filter(isFoodProduct);
+    }, [serverProducts]);
 
     const [selectedCategory, setSelectedCategory] = useState<string>(
-        categoryFromUrl || "All"
+        categoryFromUrl && isFoodCategory(categoryFromUrl) ? categoryFromUrl : "All"
     );
     const [page, setPage] = useState(1);
 
     useEffect(() => {
-        if (categoryFromUrl) {
+        if (categoryFromUrl && isFoodCategory(categoryFromUrl)) {
             setSelectedCategory(categoryFromUrl);
+        } else if (categoryFromUrl && !isFoodCategory(categoryFromUrl)) {
+            setSelectedCategory("All");
         }
     }, [categoryFromUrl]);
 

@@ -12,7 +12,7 @@ export const productApi = createApi({
       providesTags: ["Products"],
     }),
     getPopularProducts: builder.query<Product[], number | void>({
-      query: (limit = 8) => `/products/popular?limit=${limit}`,
+      query: (limit = 8) => `/products/popular?limit=${limit}&excludeLifestyle=true`,
       providesTags: ["Products"],
     }),
     getFeaturedProducts: builder.query<Product[], number | void>({

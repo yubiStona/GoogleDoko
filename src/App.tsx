@@ -11,6 +11,7 @@ import { CheckoutProvider } from "./context/CheckoutContext";
 import { AccountProvider } from "./context/AccountContext";
 import { AuthFlowProvider } from "./context/AuthFlowContext";
 
+import LandingPage from "./pages/LandingPage";
 import Home from "./pages/Home";
 import CategoriesPage from "./pages/CategoriesPage";
 import Orders from "./pages/Orders";
@@ -68,7 +69,6 @@ import {
   AdminVendors,
   AdminCoupons,
   AdminSettings,
-  AdminLifestyles,
 } from "./pages/admin/AdminPages";
 import {
   VendorAddProduct,
@@ -99,7 +99,9 @@ function App() {
       <PendingActionHandler />
       <Routes>
         <Route element={<BlockVendor />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/food" element={<Home />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route
             path="/orders"
@@ -284,7 +286,7 @@ function App() {
           <Route path="vendors" element={<AdminVendors />} />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="products" element={<AdminProducts />} />
-          <Route path="lifestyles" element={<AdminLifestyles />} />
+          <Route path="lifestyles" element={<Navigate to="/admin" replace />} />
           <Route path="reviews" element={<AdminReviews />} />
           <Route path="coupons" element={<AdminCoupons />} />
           <Route path="settings" element={<AdminSettings />} />

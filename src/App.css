@@ -12561,12 +12561,12 @@ textarea {
 
 .categories-section {
   padding-top: 10px;
-  padding-bottom: 75px;
+  padding-bottom: 65px;
 }
 
 .popular-products-section {
-  padding-top: 20px;
-  padding-bottom: 75px;
+  padding-top: 10px;
+  padding-bottom: 65px;
 }
 
 .popular-products-section .section-header,
@@ -20149,50 +20149,59 @@ textarea.error {
   scroll-snap-align: start !important;
 }
 
-.local-areas-side-scroll-track > * {
-  flex: 0 0 clamp(280px, 24vw, 340px) !important;
-  width: clamp(280px, 24vw, 340px) !important;
-  scroll-snap-align: start !important;
+/* 4-Column Balanced Grid Layout across Desktop (Matching Screenshot 4) */
+@media (min-width: 1024px) {
+  .local-areas-side-scroll-track > *,
+  .lifestyle-side-scroll-track > *,
+  .categories-side-scroll-track > *,
+  .products-side-scroll-track > * {
+    flex: 0 0 calc((100% - 3 * 24px) / 4) !important;
+    width: calc((100% - 3 * 24px) / 4) !important;
+    max-width: calc((100% - 3 * 24px) / 4) !important;
+    scroll-snap-align: start !important;
+  }
 }
 
-.lifestyle-side-scroll-track > * {
-  flex: 0 0 clamp(280px, 24vw, 340px) !important;
-  width: clamp(280px, 24vw, 340px) !important;
-  scroll-snap-align: start !important;
+/* Tablet (2 cards per view) */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .local-areas-side-scroll-track > *,
+  .lifestyle-side-scroll-track > *,
+  .categories-side-scroll-track > *,
+  .products-side-scroll-track > * {
+    flex: 0 0 calc((100% - 20px) / 2) !important;
+    width: calc((100% - 20px) / 2) !important;
+    max-width: calc((100% - 20px) / 2) !important;
+    scroll-snap-align: start !important;
+  }
 }
 
-.categories-side-scroll-track > * {
-  flex: 0 0 clamp(260px, 22vw, 310px) !important;
-  width: clamp(260px, 22vw, 310px) !important;
-  scroll-snap-align: start !important;
-}
-
-.products-side-scroll-track > * {
-  flex: 0 0 clamp(220px, 22vw, 290px) !important;
-  width: clamp(220px, 22vw, 290px) !important;
-  scroll-snap-align: start !important;
-}
-
+/* Mobile (swipeable peek) */
 @media (max-width: 640px) {
   .offers-side-scroll-track > * {
     flex: 0 0 85vw !important;
     width: 85vw !important;
   }
-  .local-areas-side-scroll-track > * {
-    flex: 0 0 82vw !important;
-    width: 82vw !important;
-  }
-  .lifestyle-side-scroll-track > * {
-    flex: 0 0 82vw !important;
-    width: 82vw !important;
-  }
-  .categories-side-scroll-track > * {
-    flex: 0 0 78vw !important;
-    width: 78vw !important;
-  }
+  .local-areas-side-scroll-track > *,
+  .lifestyle-side-scroll-track > *,
+  .categories-side-scroll-track > *,
   .products-side-scroll-track > * {
-    flex: 0 0 78vw !important;
-    width: 78vw !important;
+    flex: 0 0 82vw !important;
+    width: 82vw !important;
+    max-width: 82vw !important;
+    scroll-snap-align: start !important;
   }
+}
+
+/* Unified 180px card image height and borders for category cards in scroll track */
+.categories-side-scroll-track .category-card {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
+.categories-side-scroll-track .category-image {
+  height: 180px !important;
 }
 

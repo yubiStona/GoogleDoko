@@ -1,7 +1,7 @@
 import CategoryCard from "./CategoryCard";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { useGetCategoriesQuery } from "../store/api/apiSlice";
+import { useGetCategoriesQuery, type ApiCategory } from "../store/api/apiSlice";
 import { useSideScroll } from "../hooks/useSideScroll";
 
 const fallbackCategories = [
@@ -58,24 +58,6 @@ const fallbackCategories = [
     icon: "grains" as const,
     theme: "yellow" as const,
     to: "/categories?category=Grains",
-  },
-  {
-    id: "beauty",
-    name: "Beauty & Personal Care",
-    description: "Natural herbal soaps & skincare essentials",
-    image: "/assets/images/categories/beauty.jpg",
-    icon: "beauty" as const,
-    theme: "rose" as const,
-    to: "/categories?category=Beauty%20%26%20Personal%20Care",
-  },
-  {
-    id: "garden",
-    name: "Garden & Outdoor",
-    description: "Organic seeds, live plants & garden tools",
-    image: "/assets/images/categories/garden.jpg",
-    icon: "garden" as const,
-    theme: "green" as const,
-    to: "/categories?category=Garden%20%26%20Outdoor",
   },
 ];
 
@@ -195,12 +177,44 @@ export function getCategoryMeta(name: string): CategoryMetaEntry {
   };
 }
 
+const LIFESTYLE_CATEGORY_NAMES = new Set([
+  "furniture",
+  "home & living",
+  "home-living",
+  "kitchen & dining",
+  "kitchen-dining",
+  "garden & outdoor",
+  "garden-outdoor",
+  "beauty & personal care",
+  "beauty & skincare",
+  "beauty-personal-care",
+  "fashion & accessories",
+  "fashion-accessories",
+  "fashion",
+  "clothing",
+  "bags",
+  "shoes",
+  "home decor",
+  "bedsheets",
+]);
+
+function isFoodCategory(categoryName: string): boolean {
+  if (!categoryName) return false;
+  return !LIFESTYLE_CATEGORY_NAMES.has(categoryName.trim().toLowerCase());
+}
+
 function Categories() {
   const { data: serverCategories } = useGetCategoriesQuery();
   const { scrollRef, scrollRight } = useSideScroll();
 
-  const categories = (serverCategories && serverCategories.length > 0)
-    ? serverCategories.slice(0, 10).map((c) => {
+  const rawCategories = Array.isArray(serverCategories)
+    ? (serverCategories as ApiCategory[]).filter((c) => isFoodCategory(c.name))
+    : Array.isArray((serverCategories as unknown as { data?: unknown })?.data)
+    ? ((serverCategories as unknown as { data: ApiCategory[] }).data).filter((c) => isFoodCategory(c.name))
+    : [];
+
+  const categories = (rawCategories && rawCategories.length > 0)
+    ? rawCategories.slice(0, 10).map((c) => {
         const meta = getCategoryMeta(c.name);
         // Use server image if provided and not generic others.jpg, else use meta image
         const hasCustomServerImage = c.image && !c.image.includes("others.jpg");

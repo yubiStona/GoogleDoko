@@ -232,4 +232,101 @@ describe("Explore by Places - Frontend Integration Tests", () => {
       );
     });
   });
+
+  it("filters out lifestyle categories (e.g. Furniture, Kitchen & Dining) and lifestyle products from PlaceDetailPage", async () => {
+    const mockPlace = {
+      id: "bhaktapur",
+      name: "Bhaktapur",
+      origin: "Bhaktapur, Nepal",
+      description: "Famed for traditional agro-produce and sweet curd",
+      image: "/src/assets/images/places/bhaktapur.jpg",
+      itemCount: 1,
+      soldCount: 10,
+      activeCategoriesCount: 1,
+    };
+
+    const mockCategoriesWithLifestyle = [
+      { id: "vegetables", name: "Vegetables", productCount: 2 },
+      { id: "furniture", name: "Furniture", productCount: 1 },
+      { id: "kitchen-dining", name: "Kitchen & Dining", productCount: 1 },
+      { id: "home-living", name: "Home & Living", productCount: 1 },
+    ];
+
+    const mockPopularWithLifestyle = [
+      {
+        id: "prod-veg-01",
+        name: "Bhaktapur Red Radish",
+        category: "Vegetables",
+        price: 90,
+        rating: 4.8,
+        origin: "Bhaktapur, Nepal",
+        image: "/images/radish.jpg",
+      },
+      {
+        id: "PROD-FURN-01",
+        name: "Handcrafted Sisau Wood Dining Table",
+        category: "Furniture",
+        price: 32500,
+        rating: 4.9,
+        origin: "Bhaktapur, Nepal",
+        image: "/images/table.jpg",
+      },
+    ];
+
+    const mockProductsWithLifestyle = {
+      products: [
+        {
+          id: "prod-veg-01",
+          name: "Bhaktapur Red Radish",
+          category: "Vegetables",
+          price: 90,
+          rating: 4.8,
+          origin: "Bhaktapur, Nepal",
+          image: "/images/radish.jpg",
+        },
+        {
+          id: "PROD-HOME-01",
+          name: "Handwoven Bhaktapur Sukul Grass Rug",
+          category: "Home & Living",
+          price: 2200,
+          rating: 4.8,
+          origin: "Bhaktapur, Nepal",
+          image: "/images/rug.jpg",
+        },
+      ],
+      total: 2,
+      page: 1,
+      limit: 12,
+      totalPages: 1,
+    };
+
+    vi.spyOn(api, "placeBySlug").mockResolvedValue(mockPlace);
+    vi.spyOn(api, "placeCategories").mockResolvedValue(mockCategoriesWithLifestyle);
+    vi.spyOn(api, "placePopularProducts").mockResolvedValue(mockPopularWithLifestyle as any);
+    vi.spyOn(api, "placeProducts").mockResolvedValue(mockProductsWithLifestyle as any);
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/places/:slug" element={<PlaceDetailPage />} />
+      </Routes>,
+      { route: "/places/bhaktapur" }
+    );
+
+    // Food category should be present
+    await waitFor(() => {
+      expect(screen.getByText("Vegetables")).toBeInTheDocument();
+    });
+
+    // Lifestyle categories should be excluded
+    expect(screen.queryByText("Furniture")).not.toBeInTheDocument();
+    expect(screen.queryByText("Kitchen & Dining")).not.toBeInTheDocument();
+    expect(screen.queryByText("Home & Living")).not.toBeInTheDocument();
+
+    // Food product should be visible
+    expect(screen.getAllByText("Bhaktapur Red Radish").length).toBeGreaterThanOrEqual(1);
+
+    // Lifestyle products should NOT be displayed
+    expect(screen.queryByText("Handcrafted Sisau Wood Dining Table")).not.toBeInTheDocument();
+    expect(screen.queryByText("Handwoven Bhaktapur Sukul Grass Rug")).not.toBeInTheDocument();
+  });
 });

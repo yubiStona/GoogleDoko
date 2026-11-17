@@ -20,6 +20,10 @@ export function pageTitle(pathname: string, search: string) {
   const orderMatch = pathname.match(/^\/orders\/([^/]+)$/);
 
   if (pathname === "/") {
+    return titleFromParts(["Landing"]);
+  }
+
+  if (pathname === "/food" || pathname === "/home") {
     return titleFromParts(["Home"]);
   }
 

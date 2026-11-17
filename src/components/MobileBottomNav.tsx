@@ -17,7 +17,7 @@ function MobileBottomNav() {
 
   return (
     <nav className="mobile-bottom-nav" aria-label="Primary mobile">
-      <NavLink to="/" end>
+      <NavLink to="/food" end>
         <House size={22} strokeWidth={1.8} />
         Home
       </NavLink>

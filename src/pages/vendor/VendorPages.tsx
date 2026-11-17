@@ -365,6 +365,7 @@ export function VendorAddProduct() {
   const [publish, setPublish] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [availableLifestyles, setAvailableLifestyles] = useState<any[]>([]);
   const [selectedLifestyles, setSelectedLifestyles] = useState<string[]>([]);
@@ -430,7 +431,13 @@ export function VendorAddProduct() {
           freshness: "",
           delivery: "",
         });
-        if (p.image) setUploadedImageUrl(p.image);
+        if (Array.isArray(p.gallery) && p.gallery.length > 0) {
+          setUploadedImageUrls(p.gallery);
+          setUploadedImageUrl(p.gallery[0]);
+        } else if (p.image) {
+          setUploadedImageUrls([p.image]);
+          setUploadedImageUrl(p.image);
+        }
         if (p.lifestyleIds && Array.isArray(p.lifestyleIds)) {
           setSelectedLifestyles(p.lifestyleIds);
         }
@@ -452,32 +459,46 @@ export function VendorAddProduct() {
   async function addFiles(list: FileList | null) {
     if (!list) return;
     const newFiles = Array.from(list).slice(0, 6 - files.length);
+    if (newFiles.length === 0) return;
     setFiles((current) => [...current, ...newFiles].slice(0, 6));
-    // Upload first new file immediately
-    const firstFile = newFiles[0];
-    if (firstFile) {
-      setUploading(true);
-      try {
-        const result = await api.uploadImage(firstFile);
-        setUploadedImageUrl(result.url);
-        showToast("Image uploaded successfully!");
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Unknown error";
-        showToast("Image upload failed: " + message);
-      } finally {
-        setUploading(false);
+    setUploading(true);
+    try {
+      const newlyUploaded: string[] = [];
+      for (const file of newFiles) {
+        const result = await api.uploadImage(file);
+        if (result?.url) {
+          newlyUploaded.push(result.url);
+        }
       }
+      setUploadedImageUrls((current) => {
+        const updated = [...current, ...newlyUploaded];
+        if (!uploadedImageUrl && updated[0]) {
+          setUploadedImageUrl(updated[0]);
+        }
+        return updated;
+      });
+      showToast(`${newlyUploaded.length} image(s) uploaded successfully!`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      showToast("Image upload failed: " + message);
+    } finally {
+      setUploading(false);
     }
   }
 
   async function onSaveProduct(data: AddProductFormData, asDraft: boolean) {
-    if (!asDraft && files.length === 0 && !uploadedImageUrl) {
+    if (!asDraft && files.length === 0 && !uploadedImageUrl && uploadedImageUrls.length === 0) {
       showToast("Add at least one product image");
       return;
     }
     const category = data.category || "Others";
     const sellingUnit = data.unit || "piece";
     const weight = data.physicalWeight?.trim() || `${data.stock} ${sellingUnit}`;
+    const allGallery = uploadedImageUrls.length > 0
+      ? uploadedImageUrls
+      : (uploadedImageUrl ? [uploadedImageUrl] : []);
+    const mainImg = uploadedImageUrl || allGallery[0] || "";
+
     const payload: any = {
       name: data.name.trim(),
       description: data.description || "",
@@ -487,7 +508,8 @@ export function VendorAddProduct() {
       price: Number(data.price),
       stock: Number(data.stock) || 0,
       origin: data.origin,
-      image: uploadedImageUrl || "",
+      image: mainImg,
+      gallery: allGallery,
       active: asDraft ? 0 : (publish ? 1 : 0),
       lifestyleIds: selectedLifestyles,
       lifestyleSubcategory: lifestyleSubcat.trim() || undefined,
@@ -732,7 +754,39 @@ export function VendorAddProduct() {
                 </ul>
               ) : null}
               {uploading && <p style={{ color: "#16a34a", fontSize: 13, marginTop: 6 }}>⬆ Uploading image…</p>}
-              {uploadedImageUrl && !uploading && (
+              {uploadedImageUrls.length > 0 && !uploading && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                    {uploadedImageUrls.map((url, idx) => (
+                      <div key={idx} style={{ position: "relative" }}>
+                        <img
+                          src={url}
+                          alt={`Uploaded preview ${idx + 1}`}
+                          style={{
+                            height: 70,
+                            width: 70,
+                            borderRadius: 8,
+                            objectFit: "cover",
+                            border: uploadedImageUrl === url ? "2px solid #16a34a" : "1px solid #e5e7eb",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => setUploadedImageUrl(url)}
+                          title="Click to set as main image"
+                        />
+                        {uploadedImageUrl === url && (
+                          <span style={{ position: "absolute", bottom: 2, left: 2, background: "#16a34a", color: "#fff", fontSize: 10, padding: "1px 4px", borderRadius: 4 }}>
+                            Main
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 12, color: "#16a34a", marginTop: 4 }}>
+                    ✅ {uploadedImageUrls.length} image(s) uploaded. Click any thumbnail to set as main cover image.
+                  </p>
+                </div>
+              )}
+              {uploadedImageUrl && uploadedImageUrls.length === 0 && !uploading && (
                 <div style={{ marginTop: 8 }}>
                   <img src={uploadedImageUrl} alt="Uploaded preview" style={{ height: 70, borderRadius: 8, objectFit: "cover", border: "1px solid #e5e7eb" }} />
                   <p style={{ fontSize: 12, color: "#16a34a", marginTop: 4 }}>✅ Image uploaded</p>

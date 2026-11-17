@@ -44,9 +44,27 @@ export class ErrorBoundary extends Component<Props, State> {
           <h2 style={{ fontSize: "1.5rem", fontWeight: 600, color: "#1f2937", marginBottom: "8px" }}>
             Something went wrong
           </h2>
-          <p style={{ color: "#4b5563", maxWidth: "480px", marginBottom: "24px", fontSize: "0.95rem" }}>
+          <p style={{ color: "#4b5563", maxWidth: "480px", marginBottom: "16px", fontSize: "0.95rem" }}>
             We encountered an unexpected problem rendering this page.
           </p>
+          {import.meta.env.DEV && this.state.error && (
+            <div
+              style={{
+                textAlign: "left",
+                backgroundColor: "#fef2f2",
+                border: "1px solid #fecaca",
+                color: "#991b1b",
+                borderRadius: "8px",
+                padding: "12px 16px",
+                maxWidth: "600px",
+                marginBottom: "20px",
+                fontSize: "0.85rem",
+                overflowX: "auto",
+              }}
+            >
+              <strong>Error:</strong> {this.state.error.message}
+            </div>
+          )}
           <button
             type="button"
             onClick={() => window.location.reload()}

@@ -26,6 +26,7 @@ import {
   type PlaceProductsResponse,
 } from "../../api/client";
 import { type Product } from "../../data/products";
+import { isLifestyleCategory, isLifestyleProduct } from "../../utils/productUnits";
 
 const placeImages = import.meta.glob("../../assets/images/places/*.jpg", {
   eager: true,
@@ -91,7 +92,10 @@ export default function PlaceDetailPage() {
       .then(([placeRes, catsRes]) => {
         if (!cancelled) {
           setPlace(placeRes);
-          setCategories(catsRes || []);
+          const foodCategories = (catsRes || []).filter(
+            (c) => !isLifestyleCategory(c.name)
+          );
+          setCategories(foodCategories);
         }
       })
       .catch((err) => {
@@ -116,7 +120,9 @@ export default function PlaceDetailPage() {
       .placePopularProducts(currentSlug, 4)
       .then((res) => {
         if (!cancelled) {
-          setPopularProducts((res as any[]) || []);
+          const list = (res as any[]) || [];
+          const foodPopular = list.filter((p) => !isLifestyleProduct(p));
+          setPopularProducts(foodPopular);
           setLoadingPopular(false);
         }
       })
@@ -154,7 +160,16 @@ export default function PlaceDetailPage() {
       })
       .then((res) => {
         if (!cancelled) {
-          setProductsData(res);
+          if (res && res.products) {
+            const foodProducts = res.products.filter((p) => !isLifestyleProduct(p));
+            setProductsData({
+              ...res,
+              products: foodProducts,
+              total: foodProducts.length !== res.products.length ? foodProducts.length : res.total,
+            });
+          } else {
+            setProductsData(res);
+          }
           setLoadingProducts(false);
         }
       })

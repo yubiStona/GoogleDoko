@@ -1,4 +1,4 @@
-import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { fetchBaseQuery } from "@reduxjs/toolkit/query";
 import type { RootState } from "../index";
 import { clearCredentials } from "../slices/authSlice";
 
@@ -8,15 +8,7 @@ const baseQuery = fetchBaseQuery({
     (import.meta.env.MODE === "test" ? "http://localhost:4000/api" : "/api"),
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
-    const token =
-      (getState() as RootState).auth?.user?.token ||
-      (getState() as RootState).auth?.token ||
-      (typeof window !== "undefined"
-        ? localStorage.getItem("googledoko-token") ||
-          sessionStorage.getItem("googledoko-token") ||
-          localStorage.getItem("gd_token")
-        : null);
-
+    const token = (getState() as RootState).auth?.user?.token;
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
@@ -30,26 +22,17 @@ const baseQueryWithReauth: typeof baseQuery = async (
   extraOptions
 ) => {
   const result = await baseQuery(args, api, extraOptions);
-
-  // Only a request that was sent WITH a token means "your session expired".
-  // (A 401 from the login form just means "wrong password" and must not log anyone out.)
-  const hadToken = !!(
-    (api.getState() as RootState).auth?.user?.token ||
-    (api.getState() as RootState).auth?.token ||
-    (typeof window !== "undefined" &&
-      (localStorage.getItem("googledoko-token") ||
-        sessionStorage.getItem("googledoko-token") ||
-        localStorage.getItem("gd_token")))
-  );
-
-  if (result.error?.status === 401 && hadToken) {
-    api.dispatch(clearCredentials());
-  }
-
   if (result.error) {
-    return { error: result.error, meta: result.meta };
+    if (result.error.status === 401) {
+      api.dispatch(clearCredentials());
+      if (typeof window !== "undefined" && window.location?.pathname !== "/login") {
+        window.location.assign("/login");
+      }
+    }
+    return result;
   }
 
+  // Automatically unwrap backend { success, data } envelope so components receive pure data
   if (
     result.data &&
     typeof result.data === "object" &&
@@ -62,8 +45,8 @@ const baseQueryWithReauth: typeof baseQuery = async (
     };
   }
 
-  return { data: result.data, meta: result.meta };
+  return result;
 };
 
 export default baseQueryWithReauth;
-export { baseQueryWithReauth };
+

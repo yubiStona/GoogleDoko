@@ -194,16 +194,15 @@ function ProductDetail() {
   const currentVariety = varietiesList[selectedVarietyIndex] || varietiesList[0];
 
   const currentImage =
-    currentVariety?.image ||
-    product?.image ||
+    (selectedVarietyIndex > 0 ? currentVariety?.image : (product?.image || currentVariety?.image)) ||
     "/src/frontend/assets/images/organic-vegetables.jpg";
 
-  const displayTitle = currentVariety?.title || product?.name || "";
-  const displayPrice = activeVariant?.price ?? (currentVariety?.price || product?.price || 0);
-  const availableStock = activeVariant?.stock ?? (product?.stock ?? 100);
-  const displayOrigin = currentVariety?.origin || product?.origin || "Nepal";
-  const displaySeller = currentVariety?.seller || product?.seller || "Local Farm";
-  const displayWeight = currentVariety?.weight || product?.weight || "1 kg";
+  const displayTitle = product?.name || currentVariety?.title || "";
+  const displayPrice = activeVariant?.price ?? (product?.price ?? currentVariety?.price ?? 0);
+  const availableStock = activeVariant?.stock ?? (product?.stock && product.stock > 0 ? product.stock : 98);
+  const displayOrigin = product?.origin || currentVariety?.origin || "Nepal";
+  const displaySeller = product?.seller || currentVariety?.seller || "Local Farm";
+  const displayWeight = product?.weight || currentVariety?.weight || "1 kg";
 
   const activeProductForPurchase: Product = useMemo(() => {
     if (!product) return product as unknown as Product;
@@ -267,7 +266,10 @@ function ProductDetail() {
   }
 
   const details = getProductDetails(product.id, product.name);
-  const displaySummary = currentVariety?.description || details.about;
+  const displaySummary =
+    product?.description?.trim() ||
+    currentVariety?.description ||
+    details.about;
 
   return (
     <>
@@ -301,6 +303,15 @@ function ProductDetail() {
                 <img
                   src={currentImage}
                   alt={displayTitle}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                    transition: "transform 0.35s ease, object-position 0.35s ease",
+                    transform: currentVariety?.viewTransform?.transform || "scale(1)",
+                    objectPosition: currentVariety?.viewTransform?.objectPosition || "center center",
+                  }}
                   onError={(e) => {
                     e.currentTarget.src =
                       product.image ||
@@ -340,15 +351,25 @@ function ProductDetail() {
                       title={variety.name}
                       aria-label={`Select angle: ${variety.name}`}
                     >
-                      <img
-                        src={variety.thumb || variety.image}
-                        alt={variety.name}
-                        onError={(e) => {
-                          e.currentTarget.src =
-                            product.image ||
-                            "/src/frontend/assets/images/organic-vegetables.jpg";
-                        }}
-                      />
+                      <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
+                        <img
+                          src={variety.thumb || variety.image}
+                          alt={variety.name}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: "block",
+                            transform: variety.viewTransform?.transform || "scale(1)",
+                            objectPosition: variety.viewTransform?.objectPosition || "center center",
+                          }}
+                          onError={(e) => {
+                            e.currentTarget.src =
+                              product.image ||
+                              "/src/frontend/assets/images/organic-vegetables.jpg";
+                          }}
+                        />
+                      </div>
                       <span className="variety-cube-tag">{variety.name}</span>
                     </button>
                   );
@@ -362,15 +383,28 @@ function ProductDetail() {
 
               {/* Rating Row */}
               <div className="product-detail-rating-row">
-                <div className="rating-stars" aria-label="Rating: 4.8 out of 5 stars">
-                  <Star size={17} fill="#f5a623" stroke="#f5a623" />
-                  <Star size={17} fill="#f5a623" stroke="#f5a623" />
-                  <Star size={17} fill="#f5a623" stroke="#f5a623" />
-                  <Star size={17} fill="#f5a623" stroke="#f5a623" />
-                  <Star size={17} fill="none" stroke="#f5a623" />
+                <div
+                  className="rating-stars"
+                  aria-label={`Rating: ${reviewsResponse?.stats?.averageRating ?? product.rating ?? 5} out of 5 stars`}
+                >
+                  {[1, 2, 3, 4, 5].map((starIdx) => {
+                    const ratingVal = reviewsResponse?.stats?.averageRating ?? product.rating ?? 5;
+                    return (
+                      <Star
+                        key={starIdx}
+                        size={17}
+                        fill={starIdx <= Math.round(ratingVal) ? "#f5a623" : "none"}
+                        stroke="#f5a623"
+                      />
+                    );
+                  })}
                 </div>
                 <span className="rating-text">
-                  4.8 ({details.reviewCount || 24} reviews)
+                  {reviewsResponse?.stats?.averageRating ?? product.rating ?? 5} (
+                  {reviewsResponse?.stats?.totalReviews !== undefined
+                    ? `${reviewsResponse.stats.totalReviews} reviews`
+                    : `${details.reviewCount || 0} reviews`}
+                  )
                 </span>
               </div>
 

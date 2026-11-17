@@ -46,9 +46,10 @@ describe("Shop by Lifestyle Frontend Tests", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders 'Shop by Lifestyle' in the header navigation", async () => {
+  it("renders 'Shop by Product' and 'Shop by Place' in the header navigation", async () => {
     renderWithProviders(<Navbar />);
-    expect(screen.getAllByText("Shop by Lifestyle").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Shop by Product").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Shop by Place").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders the Lifestyle landing page with signature collections", async () => {
