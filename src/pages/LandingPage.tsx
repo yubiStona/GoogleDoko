@@ -30,8 +30,8 @@ export default function LandingPage() {
 
   const page = data ?? {
     eyebrow: "Good things, from close to home",
-    title: "A little more local. A lot more lovely.",
-    description: "Meet the food, makers, and everyday finds that make Nepal feel like home.",
+    title: "Welcome to GoogleDoko",
+    description: "Discover local food and lifestyle products, all in one place.",
     food: {
       eyebrow: "Fresh from Nepal", title: "Food with a place of origin.",
       description: "Shop farm fresh produce and traditional favourites from local growers.",
@@ -67,7 +67,13 @@ export default function LandingPage() {
       <section className="landing-intro" aria-labelledby="landing-title">
         <div className="landing-intro-copy">
           <p className="landing-eyebrow"><Leaf size={15} /> {page.eyebrow}</p>
-          <h1 id="landing-title">{page.title}</h1>
+          <h1 id="landing-title">
+            {page.title.split("GoogleDoko").map((part, index, pieces) => (
+              <span key={`${part}-${index}`}>
+                {part}{index < pieces.length - 1 && <span className="landing-title-brand">Google<span>Doko</span></span>}
+              </span>
+            ))}
+          </h1>
           <p className="landing-intro-description">{page.description}</p>
         </div>
         <a className="landing-scroll-cue" href="#explore"><span>Discover your Doko</span><ArrowDown size={17} /></a>
