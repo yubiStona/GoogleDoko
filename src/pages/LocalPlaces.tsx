@@ -10,7 +10,7 @@ import Pagination, {
   PLACES_PAGE_SIZE,
 } from "../components/Pagination";
 
-import { useGetPlacesQuery } from "../store/api/apiSlice";
+import { useGetPlacesQuery, useGetProductsQuery } from "../store/api/apiSlice";
 
 const placeImages = import.meta.glob("../assets/images/places/*.jpg", {
   eager: true,
@@ -28,7 +28,18 @@ function placeImage(origin: string) {
 
 function LocalPlaces() {
   const [page, setPage] = useState(1);
-  const { data: serverPlaces } = useGetPlacesQuery();
+  const {
+    data: serverPlaces,
+    isLoading: placesLoading,
+    isError: placesError,
+    refetch: refetchPlaces,
+  } = useGetPlacesQuery();
+  const {
+    data: products,
+    isLoading: productsLoading,
+    isError: productsError,
+    refetch: refetchProducts,
+  } = useGetProductsQuery();
 
   const places = useMemo(() => {
     if (serverPlaces && serverPlaces.length > 0) {
@@ -42,8 +53,35 @@ function LocalPlaces() {
         image: placeImage(p.origin),
       }));
     }
-    return [];
-  }, [serverPlaces]);
+
+    // Product origins are the source of truth in the database. If the places
+    // summary endpoint is empty or unavailable, still build the directory from
+    // the active products returned by /products.
+    const byPlace = new Map<string, { name: string; count: number; sold: number }>();
+    for (const product of products || []) {
+      const name = product.origin?.split(",")[0]?.trim();
+      if (!name) continue;
+      const id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const place = byPlace.get(id) || { name, count: 0, sold: 0 };
+      place.count += 1;
+      const soldCount = Number.parseInt(String(product.sold || "0"), 10);
+      place.sold += Number.isFinite(soldCount) ? soldCount : 0;
+      byPlace.set(id, place);
+    }
+
+    return Array.from(byPlace, ([id, place]) => ({
+      id,
+      name: place.name,
+      origin: place.name,
+      products: place.count,
+      sold: place.sold,
+      description: `Explore authentic products from ${place.name}.`,
+      image: placeImage(place.name),
+    }));
+  }, [serverPlaces, products]);
+
+  const isLoading = placesLoading || productsLoading;
+  const hasLoadError = placesError && productsError;
 
   const paged = paginateItems(places, page, PLACES_PAGE_SIZE);
 
@@ -109,6 +147,20 @@ function LocalPlaces() {
               </Link>
             ))}
           </div>
+
+          {isLoading && places.length === 0 && (
+            <p role="status" className="places-load-message">Loading places from local products…</p>
+          )}
+          {!isLoading && places.length === 0 && (
+            <div role="status" className="places-load-message">
+              <p>{hasLoadError ? "Places could not be loaded right now." : "No places with active products were found."}</p>
+              {hasLoadError && (
+                <button type="button" onClick={() => { refetchPlaces(); refetchProducts(); }}>
+                  Try again
+                </button>
+              )}
+            </div>
+          )}
 
           <Pagination
             page={paged.current}

@@ -10,7 +10,6 @@ import {
   Leaf,
   X,
   TrendingUp,
-  Tag,
 } from "lucide-react";
 
 import TopBar from "../../components/TopBar";
@@ -40,6 +39,23 @@ function getPlaceImage(slugOrOrigin: string): string {
     placeImages["../../assets/images/places/ilam.jpg"] ||
     "/src/assets/images/places/ilam.jpg"
   );
+}
+
+function categoriesFromProducts(products: Array<{ category?: string }>): PlaceCategorySummary[] {
+  const counts = new Map<string, string>();
+  products.forEach((product) => {
+    const name = product.category?.trim();
+    if (name && !isLifestyleCategory(name)) {
+      const key = name.toLowerCase();
+      counts.set(key, name);
+    }
+  });
+
+  return Array.from(counts.values()).map((name) => ({
+    id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+    name,
+    productCount: products.filter((product) => product.category?.trim().toLowerCase() === name.toLowerCase()).length,
+  }));
 }
 
 export default function PlaceDetailPage() {
@@ -85,25 +101,39 @@ export default function PlaceDetailPage() {
     let cancelled = false;
     setError(null);
 
-    Promise.all([
+    Promise.allSettled([
       api.placeBySlug(currentSlug),
       api.placeCategories(currentSlug),
-    ])
-      .then(([placeRes, catsRes]) => {
-        if (!cancelled) {
-          setPlace(placeRes);
-          const foodCategories = (catsRes || []).filter(
-            (c) => !isLifestyleCategory(c.name)
-          );
+    ]).then(async ([placeResult, categoriesResult]) => {
+      if (cancelled) return;
+
+      if (placeResult.status === "fulfilled") {
+        setPlace(placeResult.value);
+      } else {
+        console.warn("Failed to fetch place summary:", placeResult.reason);
+      }
+
+      if (categoriesResult.status === "fulfilled") {
+        const foodCategories = (categoriesResult.value || []).filter(
+          (category) => !isLifestyleCategory(category.name)
+        );
+        if (foodCategories.length > 0) {
           setCategories(foodCategories);
+          return;
         }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          console.error("Failed to fetch place metadata:", err);
-          setError("Place details could not be loaded. Please check your connection or choose another location.");
-        }
-      });
+      } else {
+        console.warn("Failed to fetch place categories:", categoriesResult.reason);
+      }
+
+      // Keep category names and counts tied to the place's actual products if
+      // the category summary endpoint is empty or unavailable.
+      try {
+        const response = await api.placeProducts(currentSlug, { limit: 100 });
+        if (!cancelled) setCategories(categoriesFromProducts(response.products || []));
+      } catch (err) {
+        console.warn("Could not derive categories from place products:", err);
+      }
+    });
 
     return () => {
       cancelled = true;
@@ -144,6 +174,7 @@ export default function PlaceDetailPage() {
     if (!currentSlug) return;
     let cancelled = false;
     setLoadingProducts(true);
+    setError(null);
 
     const minPrice = minPriceParam ? parseFloat(minPriceParam) : undefined;
     const maxPrice = maxPriceParam ? parseFloat(maxPriceParam) : undefined;
@@ -177,6 +208,7 @@ export default function PlaceDetailPage() {
         if (!cancelled) {
           console.error("Failed to load place products:", err);
           setLoadingProducts(false);
+          setError("Products from this place could not be loaded. Please check your connection and try again.");
         }
       });
 
@@ -233,6 +265,9 @@ export default function PlaceDetailPage() {
   const placeName = place?.name || currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1);
   const totalItemsCount = place?.itemCount ?? productsData?.total ?? 0;
   const productsList = productsData?.products || [];
+  const visibleCategories = categories.length > 0
+    ? categories
+    : categoriesFromProducts(productsList);
 
   return (
     <>
@@ -288,7 +323,7 @@ export default function PlaceDetailPage() {
                   <span className="place-stat-label">Products Available</span>
                 </div>
                 <div className="place-stat-card">
-                  <span className="place-stat-value">{categories.length}</span>
+                  <span className="place-stat-value">{visibleCategories.length}</span>
                   <span className="place-stat-label">Product Categories</span>
                 </div>
                 <div className="place-stat-card">
@@ -299,51 +334,6 @@ export default function PlaceDetailPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* Section B: Categories Available in this Place */}
-        <section className="place-categories-section">
-          <div className="place-section-header">
-            <div className="place-section-badge">
-              <Tag size={14} />
-              <span>LOCATION CATEGORIES</span>
-            </div>
-            <h2>Shop by Category in {placeName}</h2>
-            <p>
-              Select a category below to explore authentic goods grown and harvested strictly in {placeName}.
-            </p>
-          </div>
-
-          <div className="place-categories-scroll">
-            {/* All Categories Option */}
-            <button
-              type="button"
-              className={`place-category-pill ${categoryParam === "all" ? "active" : ""}`}
-              onClick={() => updateFilters({ category: "all" })}
-            >
-              <ShoppingBag size={16} />
-              <span className="category-pill-name">All Categories</span>
-              <span className="category-pill-count">{totalItemsCount}</span>
-            </button>
-
-            {/* Dynamic categories derived strictly from products belonging to this location */}
-            {categories.map((cat) => {
-              const isSelected =
-                categoryParam.toLowerCase() === cat.name.toLowerCase() ||
-                categoryParam.toLowerCase() === cat.id.toLowerCase();
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  className={`place-category-pill ${isSelected ? "active" : ""}`}
-                  onClick={() => updateFilters({ category: cat.name })}
-                >
-                  <span className="category-pill-name">{cat.name}</span>
-                  <span className="category-pill-count">{cat.productCount}</span>
-                </button>
-              );
-            })}
           </div>
         </section>
 
@@ -383,17 +373,6 @@ export default function PlaceDetailPage() {
 
         {/* Section D & E: Products Listing with Search & Filters */}
         <section className="place-products-section" id="place-products-list">
-          <div className="place-section-header">
-            <h2>
-              {categoryParam !== "all"
-                ? `${categoryParam} from ${placeName}`
-                : `All Products from ${placeName}`}
-            </h2>
-            <p>
-              Showing {productsData?.total ?? 0} authentic farm products from {placeName}
-            </p>
-          </div>
-
           {/* Place Toolbar: Search, Price Filters, Sort */}
           <div className="place-toolbar-container">
             {/* Search form */}
@@ -469,6 +448,46 @@ export default function PlaceDetailPage() {
                 </select>
               </div>
             </div>
+          </div>
+
+          <div className="place-section-header">
+            <h2>
+              {categoryParam !== "all"
+                ? `${categoryParam} from ${placeName}`
+                : `All Products from ${placeName}`}
+            </h2>
+            <p>
+              Showing {productsData?.total ?? 0} authentic farm products from {placeName}
+            </p>
+          </div>
+
+          <div className="place-categories-scroll">
+            <button
+              type="button"
+              className={`place-category-pill ${categoryParam === "all" ? "active" : ""}`}
+              onClick={() => updateFilters({ category: "all" })}
+            >
+              <ShoppingBag size={16} />
+              <span className="category-pill-name">All Categories</span>
+              <span className="category-pill-count">{totalItemsCount}</span>
+            </button>
+
+            {visibleCategories.map((cat) => {
+              const isSelected =
+                categoryParam.toLowerCase() === cat.name.toLowerCase() ||
+                categoryParam.toLowerCase() === cat.id.toLowerCase();
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`place-category-pill ${isSelected ? "active" : ""}`}
+                  onClick={() => updateFilters({ category: cat.name })}
+                >
+                  <span className="category-pill-name">{cat.name}</span>
+                  <span className="category-pill-count">{cat.productCount}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Active Filters Bar */}
