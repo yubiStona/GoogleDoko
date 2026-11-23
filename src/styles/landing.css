@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
 
 .landing-page {
   --landing-ink: #183d2b;
@@ -202,4 +202,78 @@
   .coming-image-wrap { min-height: 270px; }
   .coming-bottom-line { font-size: 8px; letter-spacing: .8px; gap: 9px; }
   .coming-bottom-line span { width: 20px; }
+}
+
+/* Scenic art, type and cards follow the user's latest landing-page references. */
+.landing-page {
+  background-color: #f8f5e9;
+  background-image: linear-gradient(180deg, rgba(255, 253, 246, .17), rgba(249, 248, 238, .35)), var(--landing-backdrop);
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+.landing-page::before { display: none; }
+.landing-header {
+  padding: 0 clamp(14px, 2vw, 28px);
+  border-radius: 0 0 18px 18px;
+  background: rgba(255, 253, 247, .56);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.landing-script-tagline {
+  margin: 1px 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #244d35;
+  font: 700 clamp(21px, 2.2vw, 29px)/1.15 "Caveat", cursive;
+}
+.landing-script-tagline span { width: clamp(24px, 4vw, 54px); height: 1px; background: #789375; }
+.landing-intro { min-height: 212px; padding-top: 29px; padding-bottom: 22px; }
+.landing-intro h1 { font-size: clamp(40px, 4.4vw, 62px); letter-spacing: -2.8px; text-shadow: 0 2px 16px rgba(255, 253, 242, .58); }
+.landing-intro-description { margin-top: 7px; color: #324d3c; font-size: 15px; }
+.landing-scroll-cue { display: none; }
+.landing-choice {
+  min-height: clamp(330px, 27vw, 405px);
+  border-radius: 32px 78px 32px 32px;
+  background: #f7f1dc;
+  box-shadow: 0 18px 42px rgba(46, 59, 37, .18), 0 2px 6px rgba(54, 67, 43, .08);
+}
+.landing-choice-image { inset: 0; width: 100%; height: 100%; border: 0; border-radius: inherit; object-fit: cover; object-position: center; }
+.landing-choice-food .landing-choice-image { transform: scaleX(-1); }
+.landing-choice-food:hover .landing-choice-image { transform: scaleX(-1) scale(1.045); }
+.landing-choice-lifestyle .landing-choice-image { object-position: center; }
+.landing-choice-lifestyle:hover .landing-choice-image { transform: scale(1.045); }
+.landing-choice-shade { background: linear-gradient(90deg, rgba(255, 251, 237, .35) 0%, rgba(255, 251, 237, .27) 46%, rgba(255, 251, 237, .02) 83%); }
+.landing-choice-lifestyle .landing-choice-shade { background: linear-gradient(90deg, rgba(255, 249, 234, .44) 0%, rgba(255, 249, 234, .31) 48%, rgba(255, 249, 234, .01) 84%); }
+.landing-choice-content { position: relative; z-index: 2; width: min(48%, 390px); margin-left: clamp(26px, 3vw, 44px); padding: 22px 15px; border-radius: 20px; }
+.landing-choice-eyebrow { margin-bottom: 13px; padding: 7px 11px; border: 1px solid rgba(72, 108, 69, .15); border-radius: 999px; color: #275e3c; background: rgba(255, 253, 245, .77); box-shadow: 0 3px 12px rgba(47, 74, 41, .07); backdrop-filter: blur(8px); }
+.landing-choice-lifestyle .landing-choice-eyebrow { color: #855224; }
+.landing-choice-title { color: #1b412d; font-size: clamp(27px, 2.6vw, 38px); text-shadow: 0 1px 12px rgba(255, 251, 238, .8); }
+.landing-choice-description { color: #354f3c; font-weight: 500; text-shadow: 0 1px 10px rgba(255, 251, 238, .75); }
+.landing-choice-button { min-height: 44px; margin-top: 19px; color: white; background: #17683f; box-shadow: 0 7px 18px rgba(27, 84, 49, .22); }
+.landing-choice-button svg { color: #ffd187; }
+.landing-choice-lifestyle .landing-choice-button { color: white; background: #d87522; }
+.landing-choice-corner { color: #25553b; border-color: rgba(70, 98, 58, .2); background: rgba(255, 253, 245, .68); }
+.landing-promise { background: rgba(255, 253, 246, .72); backdrop-filter: blur(12px); }
+
+@media (max-width: 900px) {
+  .landing-header { padding-inline: 13px; }
+  .landing-choice-content { width: 52%; margin-left: 25px; }
+  .landing-choice-title { font-size: 30px; }
+}
+@media (max-width: 640px) {
+  .landing-page { background-size: auto 100vh; background-position: center top; background-attachment: scroll; }
+  .landing-header { background: rgba(255,253,247,.74); }
+  .landing-script-tagline { font-size: 24px; }
+  .landing-intro { min-height: 196px; padding-top: 30px; }
+  .landing-intro h1 { font-size: clamp(36px, 10vw, 46px); letter-spacing: -1.8px; }
+  .landing-intro-description { font-size: 13px; }
+  .landing-choice { min-height: 300px; }
+  .landing-choice-content { width: min(70%, 280px); margin-left: 17px; padding: 16px 8px; }
+  .landing-choice-title { font-size: clamp(26px, 7.5vw, 33px); }
+  .landing-choice-description { max-width: 235px; font-size: 11px; }
+  .landing-choice-lifestyle .landing-choice-image { object-position: 55% center; }
 }

@@ -6,6 +6,7 @@ export interface LandingPageContent {
   eyebrow: string;
   title: string;
   description: string;
+  backgroundImage: string;
   food: {
     eyebrow: string;
     title: string;

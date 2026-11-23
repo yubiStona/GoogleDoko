@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowRight, ArrowUpRight, Heart, Leaf, Search, ShoppingBag, Sparkles } from "lucide-react";
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useGetLandingPageContentQuery } from "../store/api/hero";
@@ -29,25 +30,29 @@ export default function LandingPage() {
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const page = data ?? {
-    eyebrow: "Good things, from close to home",
+    eyebrow: "Good food. Better choices. Local love.",
     title: "Welcome to GoogleDoko",
     description: "Discover local food and lifestyle products, all in one place.",
+    backgroundImage: "/landing-assets/landing-background.jpg",
     food: {
       eyebrow: "Fresh from Nepal", title: "Food with a place of origin.",
       description: "Shop farm fresh produce and traditional favourites from local growers.",
-      button: "Explore food", image: "/landing-assets/food-photo.jpg",
-      imageAlt: "Traditional Nepalese momo served with dipping sauce", href: "/food",
+      button: "Explore food", image: "/landing-assets/food-card-scene.jpg",
+      imageAlt: "Traditional Nepali food with a Himalayan hillside and temple", href: "/food",
     },
     lifestyle: {
       eyebrow: "Made to be lived with", title: "Bring local craft into your home.",
       description: "Find thoughtful home, fashion, and handmade goods from Nepalese makers.",
-      button: "Explore lifestyle", image: "/landing-assets/lifestyle-photo.jpg",
-      imageAlt: "Colorful locally made bag and home goods", href: "/lifestyle-coming-soon",
+      button: "Explore lifestyle", image: "/landing-assets/lifestyle-card-scene.jpg",
+      imageAlt: "Nepali handcrafted bag and home goods beside a mountain view", href: "/lifestyle-coming-soon",
     },
   };
 
   return (
-    <main className="landing-page">
+    <main
+      className="landing-page"
+      style={{ "--landing-backdrop": `url("${page.backgroundImage}")` } as CSSProperties & { "--landing-backdrop": string }}
+    >
       <header className="landing-header">
         <LandingBrand />
         <nav className="landing-nav" aria-label="Main navigation">
@@ -66,7 +71,7 @@ export default function LandingPage() {
 
       <section className="landing-intro" aria-labelledby="landing-title">
         <div className="landing-intro-copy">
-          <p className="landing-eyebrow"><Leaf size={15} /> {page.eyebrow}</p>
+          <p className="landing-script-tagline"><span />{page.eyebrow}<span /></p>
           <h1 id="landing-title">
             {page.title.split("GoogleDoko").map((part, index, pieces) => (
               <span key={`${part}-${index}`}>

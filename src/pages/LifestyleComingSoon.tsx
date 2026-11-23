@@ -6,7 +6,7 @@ import "../styles/landing.css";
 
 export default function LifestyleComingSoon() {
   const { data } = useGetLandingPageContentQuery();
-  const lifestyleImage = data?.lifestyle.image || "/landing-assets/lifestyle-photo.jpg";
+  const lifestyleImage = data?.lifestyle.image || "/landing-assets/lifestyle-card-scene.jpg";
 
   return (
     <main className="lifestyle-coming-page">
