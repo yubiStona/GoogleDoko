@@ -4,7 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useGetLandingPageContentQuery } from "../store/api/hero";
 import "../styles/landing.css";
 
-function Brand() {
+export function LandingBrand() {
   return (
     <Link to="/" className="landing-brand" aria-label="GoogleDoko home">
       <span className="landing-brand-mark" aria-hidden="true">
@@ -35,21 +35,21 @@ export default function LandingPage() {
     food: {
       eyebrow: "Fresh from Nepal", title: "Food with a place of origin.",
       description: "Shop farm fresh produce and traditional favourites from local growers.",
-      button: "Explore food", image: "/landing-assets/food.png",
-      imageAlt: "A basket filled with fresh vegetables from local farms", href: "/food",
+      button: "Explore food", image: "/landing-assets/food-photo.jpg",
+      imageAlt: "Traditional Nepalese momo served with dipping sauce", href: "/food",
     },
     lifestyle: {
       eyebrow: "Made to be lived with", title: "Bring local craft into your home.",
       description: "Find thoughtful home, fashion, and handmade goods from Nepalese makers.",
-      button: "Explore lifestyle", image: "/landing-assets/lifestyle.jpg",
-      imageAlt: "Warm, locally styled home with handcrafted decor", href: "/lifestyle",
+      button: "Explore lifestyle", image: "/landing-assets/lifestyle-photo.jpg",
+      imageAlt: "Colorful locally made bag and home goods", href: "/lifestyle-coming-soon",
     },
   };
 
   return (
     <main className="landing-page">
       <header className="landing-header">
-        <Brand />
+        <LandingBrand />
         <nav className="landing-nav" aria-label="Main navigation">
           <a href="#explore">Explore</a>
           <Link to="/about">Our story</Link>
@@ -113,7 +113,7 @@ export default function LandingPage() {
         <div><span className="landing-promise-icon gold"><ShoppingBag size={19} /></span><span><strong>One doko, two worlds</strong><small>Fresh food and local lifestyle</small></span></div>
       </section>
 
-      <footer className="landing-footer"><Brand /><span>Good food. Better choices. Local love.</span></footer>
+      <footer className="landing-footer"><LandingBrand /><span>Good food. Better choices. Local love.</span></footer>
     </main>
   );
 }

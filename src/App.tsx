@@ -12,6 +12,7 @@ import { AccountProvider } from "./context/AccountContext";
 import { AuthFlowProvider } from "./context/AuthFlowContext";
 
 import LandingPage from "./pages/LandingPage";
+import LifestyleComingSoon from "./pages/LifestyleComingSoon";
 import Home from "./pages/Home";
 import CategoriesPage from "./pages/CategoriesPage";
 import Orders from "./pages/Orders";
@@ -141,6 +142,7 @@ function App() {
           <Route path="/places" element={<LocalPlaces />} />
           <Route path="/places/:slug" element={<PlaceDetailPage />} />
           <Route path="/lifestyle" element={<LifestyleLanding />} />
+          <Route path="/lifestyle-coming-soon" element={<LifestyleComingSoon />} />
           <Route path="/lifestyle/:slug" element={<LifestyleCollectionPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />

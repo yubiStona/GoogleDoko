@@ -158,3 +158,48 @@
 @media (prefers-reduced-motion: reduce) {
   .landing-page *, .landing-page *::before, .landing-page *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* Image-led destination panels inspired by the supplied storefront references. */
+.landing-choice { background: linear-gradient(135deg, #153e2b, #205b3c 70%); }
+.landing-choice-lifestyle { background: linear-gradient(135deg, #9a5b3c, #c37c54 76%); }
+.landing-choice-image { left: auto; width: 59%; border-radius: 48% 0 0 48% / 50% 0 0 50%; object-position: center; }
+.landing-choice-shade { background: linear-gradient(90deg, transparent 37%, rgba(11, 44, 29, .46) 53%, rgba(11, 44, 29, .05) 75%, transparent 100%); }
+.landing-choice-lifestyle .landing-choice-shade { background: linear-gradient(90deg, transparent 37%, rgba(66, 42, 27, .42) 53%, rgba(66, 42, 27, .04) 76%, transparent 100%); }
+.landing-choice-content { width: min(47%, 390px); }
+
+.lifestyle-coming-page { min-height: 100vh; position: relative; overflow: hidden; padding: 0 clamp(20px, 6vw, 100px) 30px; color: #173e2a; background: linear-gradient(145deg, #fffdf9 0%, #f5f5eb 100%); font-family: "DM Sans", Arial, sans-serif; }
+.lifestyle-coming-page::before { content: ""; position: absolute; inset: auto -5% 0; height: 180px; opacity: .24; pointer-events: none; background: linear-gradient(145deg, transparent 42%, #dce9d7 42.2% 56%, transparent 56.2%), linear-gradient(35deg, transparent 36%, #e5ecd9 36.2% 60%, transparent 60.2%); clip-path: polygon(0 55%, 8% 42%, 15% 54%, 24% 25%, 34% 48%, 43% 32%, 54% 60%, 64% 35%, 74% 52%, 85% 22%, 94% 48%, 100% 34%, 100% 100%, 0 100%); }
+.coming-header { position: relative; z-index: 1; width: min(100%, 1180px); min-height: 80px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(36, 91, 59, .1); }
+.coming-home-link { display: inline-flex; align-items: center; gap: 8px; color: #52745e; text-decoration: none; font-size: 12px; font-weight: 700; }
+.coming-home-link:hover { color: #e78c26; }
+.coming-card { position: relative; z-index: 1; width: min(100%, 1080px); min-height: 510px; margin: clamp(30px, 7vh, 72px) auto 0; display: grid; grid-template-columns: .92fr 1.08fr; overflow: hidden; border: 1px solid rgba(255,255,255,.9); border-radius: 28px 74px 28px 28px; background: rgba(255,255,255,.88); box-shadow: 0 22px 62px rgba(37, 73, 47, .12); animation: coming-rise .65s cubic-bezier(.2,.75,.2,1) both; }
+.coming-copy { align-self: center; padding: clamp(30px, 5vw, 60px); }
+.coming-kicker { display: inline-flex; align-items: center; gap: 8px; color: #b66f2e; font-size: 10px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; }
+.coming-overline { margin: 29px 0 9px; color: #598168; font-size: 10px; font-weight: 700; letter-spacing: 1.45px; }
+.coming-copy h1 { margin: 0; color: #183e2b; font: 800 clamp(34px, 4.1vw, 50px)/1.1 "Manrope", sans-serif; letter-spacing: -2px; }
+.coming-description { max-width: 440px; margin: 16px 0 0; color: #667c70; font-size: 13px; line-height: 1.75; }
+.coming-food-button { min-height: 48px; margin-top: 24px; padding: 0 19px; display: inline-flex; align-items: center; gap: 13px; border-radius: 999px; color: white; background: #17683f; box-shadow: 0 7px 16px rgba(23, 104, 63, .18); text-decoration: none; font-size: 12px; font-weight: 700; transition: transform .2s ease, background .2s ease, gap .2s ease; }
+.coming-food-button:hover { transform: translateY(-2px); gap: 18px; background: #105735; }
+.coming-note { margin-top: 19px; display: flex; align-items: center; gap: 7px; color: #819283; font-size: 10px; }
+.coming-image-wrap { position: relative; min-height: 100%; overflow: hidden; background: #c77a50; }
+.coming-image-wrap::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(30,30,20,.24), transparent 45%); }
+.coming-image-wrap img { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; object-position: center; animation: coming-image-in 1s ease-out both; }
+.coming-image-label { position: absolute; z-index: 1; right: 20px; bottom: 20px; padding: 9px 13px; border: 1px solid rgba(255,255,255,.45); border-radius: 999px; color: white; background: rgba(55,38,25,.23); backdrop-filter: blur(9px); font-size: 10px; font-weight: 700; }
+.coming-bottom-line { position: relative; z-index: 1; width: min(100%, 1080px); margin: 23px auto 0; display: flex; align-items: center; justify-content: center; gap: 15px; color: #78907e; font-size: 9px; font-weight: 700; letter-spacing: 1.4px; }
+.coming-bottom-line span { width: 38px; height: 1px; background: #adc5a8; }
+@keyframes coming-rise { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes coming-image-in { from { transform: scale(1.06); filter: saturate(.85); } to { transform: scale(1); filter: saturate(1); } }
+
+@media (max-width: 900px) { .landing-choice-content { width: 50%; } }
+@media (max-width: 640px) {
+  .landing-choice-content { width: min(68%, 280px); }
+  .landing-choice-image { width: 58%; opacity: .92; }
+  .coming-header { min-height: 70px; }
+  .coming-card { min-height: auto; grid-template-columns: 1fr; margin-top: 24px; border-radius: 22px 50px 22px 22px; }
+  .coming-copy { padding: 29px 25px; }
+  .coming-overline { margin-top: 22px; }
+  .coming-copy h1 { font-size: 37px; }
+  .coming-image-wrap { min-height: 270px; }
+  .coming-bottom-line { font-size: 8px; letter-spacing: .8px; gap: 9px; }
+  .coming-bottom-line span { width: 20px; }
+}
