@@ -9,7 +9,6 @@ import {
   Coins,
   Gift,
   Heart,
-  Info,
   Lock,
   LogOut,
   MapPin,
@@ -194,17 +193,6 @@ function Account() {
                     <span>
                       <strong>Addresses</strong>
                       <small>Manage your delivery addresses</small>
-                    </span>
-                    <ChevronRight size={18} />
-                  </Link>
-
-                  <Link to="/about" className="profile-menu-row">
-                    <span className="profile-menu-icon mint">
-                      <Info size={18} />
-                    </span>
-                    <span>
-                      <strong>About Us</strong>
-                      <small>Learn about GoogleDoko</small>
                     </span>
                     <ChevronRight size={18} />
                   </Link>
