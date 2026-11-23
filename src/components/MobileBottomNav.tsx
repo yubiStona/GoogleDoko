@@ -3,15 +3,16 @@ import { NavLink } from "react-router-dom";
 
 import { useAccount } from "../context/AccountContext";
 import { useCart } from "../context/CartContext";
+import { adminVendorPortalUrl } from "../utils/adminVendorPortal";
 
 function MobileBottomNav() {
   const { isLoggedIn, user } = useAccount();
   const { cartItems } = useCart();
   const accountHref =
     isLoggedIn && user.role === "admin"
-      ? "/admin"
+      ? adminVendorPortalUrl("/admin")
       : isLoggedIn && user.role === "vendor"
-        ? "/vendor"
+        ? adminVendorPortalUrl("/vendor")
         : "/account";
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
@@ -48,10 +49,17 @@ function MobileBottomNav() {
         </span>
         Cart
       </NavLink>
-      <NavLink to={isLoggedIn ? accountHref : "/login"}>
-        <UserRound size={22} strokeWidth={1.8} />
-        Account
-      </NavLink>
+      {isLoggedIn && user.role !== "customer" ? (
+        <a href={accountHref}>
+          <UserRound size={22} strokeWidth={1.8} />
+          Account
+        </a>
+      ) : (
+        <NavLink to={isLoggedIn ? accountHref : "/login"}>
+          <UserRound size={22} strokeWidth={1.8} />
+          Account
+        </NavLink>
+      )}
     </nav>
   );
 }
