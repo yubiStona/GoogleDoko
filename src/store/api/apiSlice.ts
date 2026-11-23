@@ -121,7 +121,7 @@ export const apiSlice = createApi({
       Product[],
       { slug: string; limit?: number }
     >({
-      query: ({ slug, limit = 4 }) => `/places/${slug}/popular?limit=${limit}`,
+      query: ({ slug, limit = 4 }) => `/places/${slug}/popular-products?limit=${limit}`,
       providesTags: (_result, _error, { slug }) => [
         { type: "Places", id: `${slug}-popular` },
       ],
