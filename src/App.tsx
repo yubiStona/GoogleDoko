@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import ScrollToTop from "./components/ScrollToTop";
 import DocumentTitle from "./components/DocumentTitle";
@@ -35,14 +35,11 @@ import AccountWishlist from "./pages/account/AccountWishlist";
 import AccountAddresses from "./pages/account/AccountAddresses";
 import AccountReviews from "./pages/account/AccountReviews";
 import AccountRewards from "./pages/account/AccountRewards";
-import Login from "./pages/Login";
+import CustomerLoginEntry from "./pages/CustomerLoginEntry";
 import SignUp from "./pages/SignUp";
 import SignUpCustomer from "./pages/SignUpCustomer";
-import SignUpVendor from "./pages/SignUpVendor";
-import VendorSignupStatus from "./pages/VendorSignupStatus";
 import ResetPassword from "./pages/ResetPassword";
 import ForgotPassword from "./pages/ForgotPassword";
-import AdminLogin from "./pages/admin/AdminLogin";
 import Search from "./pages/Search";
 import CheckoutDelivery from "./pages/CheckoutDelivery";
 import CheckoutPayment from "./pages/CheckoutPayment";
@@ -53,35 +50,7 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthPrompt from "./components/auth/AuthPrompt";
 import PendingActionHandler from "./components/auth/PendingActionHandler";
-import BlockVendor from "./components/vendor/BlockVendor";
-import VendorShell from "./components/vendor/VendorShell";
-import VendorHome from "./pages/vendor/VendorHome";
-import AdminShell from "./components/admin/AdminShell";
-import {
-  AdminSupport,
-  AdminSubscribers,
-  AdminProfile,
-  AdminHome,
-  AdminOrders,
-  AdminProducts,
-  AdminReviews,
-  AdminUsers,
-  AdminVendors,
-  AdminCoupons,
-  AdminSettings,
-} from "./pages/admin/AdminPages";
-import {
-  VendorAddProduct,
-  VendorAnalytics,
-  VendorCustomers,
-  VendorOrders,
-  VendorProducts,
-  VendorProfile,
-  VendorReports,
-  VendorReviews,
-  VendorSales,
-  VendorSettings,
-} from "./pages/vendor/VendorPages";
+import AdminVendorPortalRedirect from "./components/AdminVendorPortalRedirect";
 
 function App() {
   return (
@@ -98,7 +67,6 @@ function App() {
       <AuthPrompt />
       <PendingActionHandler />
       <Routes>
-        <Route element={<BlockVendor />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/food" element={<Home />} />
           <Route path="/home" element={<Home />} />
@@ -250,47 +218,15 @@ function App() {
           />
           <Route path="/search" element={<Search />} />
           <Route path="*" element={<NotFound />} />
-        </Route>
-
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<CustomerLoginEntry />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/signup/customer" element={<SignUpCustomer />} />
-        <Route path="/signup/vendor" element={<SignUpVendor />} />
-        <Route path="/signup/vendor/status" element={<VendorSignupStatus />} />
+        <Route path="/signup/vendor/*" element={<AdminVendorPortalRedirect />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/vendor/login" element={<Navigate to="/login" replace state={{ role: "vendor", from: "/vendor" }} />} />
-        <Route path="/login/vendor" element={<Navigate to="/login" replace state={{ role: "vendor", from: "/vendor" }} />} />
-
-        <Route path="/vendor" element={<VendorShell />}>
-          <Route index element={<VendorHome />} />
-          <Route path="products/new" element={<VendorAddProduct />} />
-          <Route path="products/:id/edit" element={<VendorAddProduct />} />
-          <Route path="products" element={<VendorProducts />} />
-          <Route path="orders" element={<VendorOrders />} />
-          <Route path="customers" element={<VendorCustomers />} />
-          <Route path="sales" element={<VendorSales />} />
-          <Route path="reports" element={<VendorReports />} />
-          <Route path="analytics" element={<VendorAnalytics />} />
-          <Route path="reviews" element={<VendorReviews />} />
-          <Route path="profile" element={<VendorProfile />} />
-          <Route path="settings" element={<VendorSettings />} />
-        </Route>
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<AdminShell />}>
-          <Route index element={<AdminHome />} />
-          <Route path="support" element={<AdminSupport />} />
-          <Route path="subscribers" element={<AdminSubscribers />} />
-          <Route path="profile" element={<AdminProfile />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="vendors" element={<AdminVendors />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="lifestyles" element={<Navigate to="/admin" replace />} />
-          <Route path="reviews" element={<AdminReviews />} />
-          <Route path="coupons" element={<AdminCoupons />} />
-          <Route path="settings" element={<AdminSettings />} />
-        </Route>
+        <Route path="/login/vendor" element={<AdminVendorPortalRedirect />} />
+        <Route path="/vendor/*" element={<AdminVendorPortalRedirect />} />
+        <Route path="/admin/*" element={<AdminVendorPortalRedirect />} />
       </Routes>
       </AuthFlowProvider>
     </BrowserRouter>

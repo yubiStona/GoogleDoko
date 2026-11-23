@@ -10,6 +10,7 @@ import { postLoginPath, useAccount } from "../context/AccountContext";
 import { type AccountRole } from "../data/authOptions";
 import loginProduceImage from "../assets/images/login-produce.jpg";
 import { getFormErrorScrollHandler, scrollToElement } from "../utils/formErrorNavigation";
+import { adminVendorPortalUrl } from "../utils/adminVendorPortal";
 
 const loginSchema = yup.object({
   identifier: yup
@@ -130,13 +131,9 @@ function Login() {
             </button>
             <button
               type="button"
-              className={role === "vendor" ? "active" : ""}
-              onClick={() => {
-                setRole("vendor");
-                setServerError("");
-              }}
+              onClick={() => window.location.assign(adminVendorPortalUrl("/login?role=vendor"))}
             >
-              Vendor
+              Vendor login
             </button>
           </div>
 
@@ -191,14 +188,14 @@ function Login() {
             {serverError ? <p className="auth-error">{serverError}</p> : null}
 
             <button type="submit" className="auth-btn" disabled={loading}>
-              {loading ? "Logging in..." : role === "vendor" ? "Sign In as Vendor" : "Login"}
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
 
           <p className="auth-switch">
             Don&apos;t have an account?{" "}
-            <Link to={role === "vendor" ? "/signup/vendor" : "/signup"} state={{ from: from || (role === "vendor" ? "/vendor" : undefined) }}>
-              {role === "vendor" ? "Register as a Vendor" : "Sign Up"}
+            <Link to="/signup">
+              Sign Up
             </Link>
           </p>
         </div>

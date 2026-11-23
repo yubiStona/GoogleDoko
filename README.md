@@ -1,5 +1,7 @@
 # React + TypeScript + Vite
 
+Admin and vendor authentication, registration, dashboards, and activity pages run from the separate `GoogleDoko_AdminVendor` app. Locally it runs on port `5174`; the storefront links there automatically. In production, storefront links target `admin.<storefront-domain>` by default, with `VITE_ADMIN_VENDOR_URL` available to override it. Set the portal build's `VITE_API_BASE_URL` to the shared backend, and include the portal origin in the backend `ALLOWED_ORIGINS` setting.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

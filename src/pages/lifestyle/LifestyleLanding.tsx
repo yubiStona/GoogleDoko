@@ -9,6 +9,7 @@ import {
 import TopBar from "../../components/TopBar";
 import Navbar from "../../components/layout/Navbar";
 import Footer from "../../components/layout/Footer";
+import { adminVendorPortalUrl } from "../../utils/adminVendorPortal";
 
 import heroBannerBase from "../../assets/images/lifestyle/hero-banner-base.jpg";
 import midBannerBase from "../../assets/images/lifestyle/mid-banner-base.jpg";
@@ -179,9 +180,9 @@ export default function LifestyleLanding() {
           </div>
 
           <div className="lifestyle-subnav-right-col">
-            <Link to="/signup/vendor" className="lifestyle-vendor-link">
+            <a href={adminVendorPortalUrl("/signup/vendor")} className="lifestyle-vendor-link">
               Become a Vendor
-            </Link>
+            </a>
           </div>
         </div>
       </nav>

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import LogoMark from "../LogoMark";
+import { adminVendorPortalUrl } from "../../utils/adminVendorPortal";
 
 function Footer() {
   return (
@@ -195,10 +196,10 @@ function Footer() {
               </li>
 
               <li>
-                <Link to="/vendor">
+                <a href={adminVendorPortalUrl("/vendor")}>
                   <Store size={21} />
                   <span>Vendor Portal</span>
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

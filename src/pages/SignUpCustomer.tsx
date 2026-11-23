@@ -17,6 +17,7 @@ import * as yup from "yup";
 import AuthShell from "../components/auth/AuthShell";
 import AuthPasswordField from "../components/auth/AuthPasswordField";
 import { postLoginPath, useAccount } from "../context/AccountContext";
+import { adminVendorPortalUrl } from "../utils/adminVendorPortal";
 import {
   fileToDataUrl,
   isNepalMobile,
@@ -189,15 +190,15 @@ function SignUpCustomer() {
             <ShoppingBag size={18} />
             <span>Customer Account</span>
           </Link>
-          <Link
-            to="/signup/vendor"
+          <a
+            href={adminVendorPortalUrl("/signup/vendor")}
             className="auth-role-tab"
             role="tab"
             aria-selected="false"
           >
             <Store size={18} />
             <span>Vendor / Farmer Partner</span>
-          </Link>
+          </a>
         </div>
 
         <div className="auth-header-group">

@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation } from "react-router-dom";
 
 import AuthShell from "../components/auth/AuthShell";
 import { postLoginPath, useAccount } from "../context/AccountContext";
+import { adminVendorPortalUrl } from "../utils/adminVendorPortal";
 
 function SignUp() {
   const { isLoggedIn, user } = useAccount();
@@ -57,9 +58,9 @@ function SignUp() {
             <li>Add product origin</li>
             <li>Manage your orders</li>
           </ul>
-          <Link to="/signup/vendor" state={{ from }} className="auth-btn vendor">
+          <a href={adminVendorPortalUrl("/signup/vendor")} className="auth-btn vendor">
             Continue as Vendor
-          </Link>
+          </a>
         </article>
       </div>
 

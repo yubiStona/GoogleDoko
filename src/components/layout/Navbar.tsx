@@ -24,6 +24,7 @@ import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 import LogoMark from "../LogoMark";
 import MobileBottomNav from "../MobileBottomNav";
+import { adminVendorPortalUrl } from "../../utils/adminVendorPortal";
 
 function Navbar() {
   const location = useLocation();
@@ -41,9 +42,9 @@ function Navbar() {
 
   const accountHref =
     isLoggedIn && user.role === "admin"
-      ? "/admin"
+      ? adminVendorPortalUrl("/admin")
       : isLoggedIn && user.role === "vendor"
-        ? "/vendor"
+        ? adminVendorPortalUrl("/vendor")
         : "/account";
   const [accountOpen, setAccountOpen] = useState(false);
   const { wishlist } = useWishlist();
