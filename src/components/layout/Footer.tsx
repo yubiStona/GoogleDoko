@@ -24,6 +24,7 @@ import { api, type PublicBusinessSettings } from "../../api/client";
 function Footer() {
   const [business, setBusiness] = useState<PublicBusinessSettings | null>(null);
   useEffect(() => { void api.getPublicBusinessSettings().then(setBusiness).catch(() => undefined); }, []);
+  if (business?.footerVisible === false) return null;
   return (
     <footer className="footer">
       {/* Main Footer */}
@@ -37,12 +38,11 @@ function Footer() {
             <div className="footer-logo">
               <LogoMark className="footer-logo-icon" decorative />
 
-              <span>GoogleDoko</span>
+              <span>{business?.footerContent?.aboutTitle || "GoogleDoko"}</span>
             </div>
 
             <p className="footer-description">
-              Discover fresh, authentic and locally sourced products from
-              different places across Nepal.
+              {business?.footerContent?.aboutText || "Discover fresh, authentic and locally sourced products from different places across Nepal."}
             </p>
 
             {/* Payment Methods */}
@@ -96,7 +96,7 @@ function Footer() {
               </li>
 
               <li>
-                <Link to="/about">
+                <Link to="/pages/news">
                   <CircleHelp size={21} />
                   <span>News</span>
                 </Link>
@@ -127,9 +127,9 @@ function Footer() {
               </li>
 
               <li>
-                <Link to="/about">
+                <Link to="/pages/privacy">
                   <Lock size={21} />
-                  <span>Privacy policy</span>
+                  <span>{business?.footerContent?.privacyLabel || "Privacy policy"}</span>
                 </Link>
               </li>
 
@@ -148,9 +148,9 @@ function Footer() {
               </li>
 
               <li>
-                <Link to="/about">
+                <Link to="/pages/terms">
                   <FileText size={21} />
-                  <span>Terms &amp; condition</span>
+                  <span>{business?.footerContent?.termsLabel || "Terms &amp; condition"}</span>
                 </Link>
               </li>
             </ul>
@@ -218,19 +218,19 @@ function Footer() {
             <div className="contact-item">
               <MapPin size={25} className="contact-icon orange" />
 
-              <p>{business?.supportAddress || "Kathmandu, Nepal"}</p>
+              <p>{business?.footerContent?.location || business?.supportAddress || "Kathmandu, Nepal"}</p>
             </div>
 
             <div className="contact-item">
               <Phone size={23} className="contact-icon orange" />
 
-              <p>{business?.supportPhone || "+977 111-111-1111"}</p>
+              <p>{business?.footerContent?.phone || business?.supportPhone || "+977 111-111-1111"}</p>
             </div>
 
             <div className="contact-item">
               <Mail size={23} className="contact-icon orange" />
 
-              <p>{business?.supportEmail || "support@googledoko.com"}</p>
+              <p>{business?.footerContent?.email || business?.supportEmail || "support@googledoko.com"}</p>
             </div>
           </div>
         </div>
@@ -245,9 +245,9 @@ function Footer() {
           <p>© 2026&nbsp; GoogleDoko, All Rights Reserved.</p>
 
           <div className="footer-bottom-links">
-            <Link to="/about">Terms and conditions</Link>
+            <Link to="/pages/terms">{business?.footerContent?.termsLabel || "Terms and conditions"}</Link>
 
-            <Link to="/about">Privacy Limited</Link>
+            <Link to="/pages/privacy">{business?.footerContent?.privacyLabel || "Privacy policy"}</Link>
           </div>
         </div>
       </div>

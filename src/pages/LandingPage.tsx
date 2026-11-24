@@ -36,6 +36,13 @@ export default function LandingPage() {
     return () => { active = false; window.clearInterval(timer); };
   }, []);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const section = (key: string, fallback: Record<string, string>) => data?.sections?.[key] || fallback;
+  const specials = section("special_offers", { title: "Special offers", description: "Seasonal picks and offers from local sellers.", image: "", button: "Explore offers", href: "/shop" });
+  const how = section("how_it_works", { title: "How GoogleDoko works", description: "Shop local in a few simple steps.", step1Title: "Discover", step1Description: "Explore food and local places.", step2Title: "Choose", step2Description: "Pick products from trusted sellers.", step3Title: "Enjoy", step3Description: "Get your order delivered." });
+  const why = section("why_choose_us", { title: "Why choose GoogleDoko", description: "Good food, local makers, and thoughtful service.", item1Title: "Local first", item1Description: "Support producers across Nepal.", item2Title: "Chosen with care", item2Description: "Discover authentic local goods.", item3Title: "At your door", item3Description: "Simple delivery and support." });
+  const promo = section("promo", { title: "A little more local", description: "Discover what is fresh and special this week.", image: "", button: "Shop now", href: "/shop" });
+  const footer = section("footer", { aboutTitle: "About GoogleDoko", aboutText: "Discover fresh, authentic and locally sourced products from across Nepal.", location: "Kathmandu, Nepal", phone: "+977 111-111-111", email: "support@googledoko.com", privacyLabel: "Privacy Policy", termsLabel: "Terms & Conditions" });
+  const contentSectionOrder = ["special_offers", "how_it_works", "why_choose_us", "promo"].sort((a, b) => (page.displayOrder?.[a] ?? 99) - (page.displayOrder?.[b] ?? 99));
 
   const page = data ?? {
     eyebrow: "Good food. Better choices. Local love.",
@@ -109,15 +116,31 @@ export default function LandingPage() {
         </Link>)}
       </section>
 
-      <section className="landing-promise" aria-label="Why shop GoogleDoko">
-        <div><span className="landing-promise-icon"><Leaf size={19} /></span><span><strong>Rooted in Nepal</strong><small>Local producers, real stories</small></span></div>
+      {contentSectionOrder.map((sectionKey) => {
+        if (sectionKey === "why_choose_us") return page.visibility?.why_choose_us === 0 ? null : <section key={sectionKey} className="landing-why-section" aria-label="Why shop GoogleDoko">
+        <div className="landing-why-heading"><p className="landing-section-kicker">Local by nature</p><h2>{why.title}</h2><p>{why.description}</p></div>
+        <div className="landing-promise">
+        <div><span className="landing-promise-icon"><Leaf size={19} /></span><span><strong>{why.item1Title}</strong><small>{why.item1Description}</small></span></div>
         <span className="landing-promise-divider" />
-        <div><span className="landing-promise-icon warm"><Heart size={19} /></span><span><strong>Chosen with care</strong><small>Thoughtful finds for everyday life</small></span></div>
+        <div><span className="landing-promise-icon warm"><Heart size={19} /></span><span><strong>{why.item2Title}</strong><small>{why.item2Description}</small></span></div>
         <span className="landing-promise-divider" />
-        <div><span className="landing-promise-icon gold"><ShoppingBag size={19} /></span><span><strong>One doko, two worlds</strong><small>Fresh food and local lifestyle</small></span></div>
-      </section>
+        <div><span className="landing-promise-icon gold"><ShoppingBag size={19} /></span><span><strong>{why.item3Title}</strong><small>{why.item3Description}</small></span></div>
+        </div>
+      </section>;
+        if (sectionKey === "special_offers") return page.visibility?.special_offers === 0 ? null : <section key={sectionKey} className="landing-content-section landing-offers" aria-label="Special offers" style={specials.image ? { backgroundImage: `linear-gradient(90deg, rgba(255,253,246,.96), rgba(255,253,246,.68)), url("${specials.image}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
+        <div><p className="landing-section-kicker">Handpicked for you</p><h2>{specials.title}</h2><p>{specials.description}</p></div>
+        <Link className="landing-content-button" to={specials.href}>{specials.button}<ArrowRight size={17} /></Link>
+      </section>;
+        if (sectionKey === "how_it_works") return page.visibility?.how_it_works === 0 ? null : <section key={sectionKey} className="landing-content-section landing-how" aria-label="How it works">
+        <p className="landing-section-kicker">Easy as 1, 2, 3</p><h2>{how.title}</h2><p>{how.description}</p>
+        <div className="landing-steps">{[1, 2, 3].map((n) => <article key={n}><span>0{n}</span><h3>{how[`step${n}Title`]}</h3><p>{how[`step${n}Description`]}</p></article>)}</div>
+      </section>;
+        return page.visibility?.promo === 0 ? null : <section key={sectionKey} className="landing-promo" style={promo.image ? { backgroundImage: `linear-gradient(90deg, rgba(13,50,33,.88), rgba(13,50,33,.16)), url("${promo.image}")` } : undefined}>
+        <div><p className="landing-section-kicker">From Nepal, with care</p><h2>{promo.title}</h2><p>{promo.description}</p><Link className="landing-content-button" to={promo.href}>{promo.button}<ArrowRight size={17} /></Link></div>
+      </section>;
+      })}
 
-      <footer className="landing-footer"><LandingBrand /><span>Good food. Better choices. Local love.</span></footer>
+      {page.visibility?.footer !== 0 && <footer className="landing-footer"><LandingBrand /><span>{footer.aboutText}</span><span>{footer.location} · {footer.phone} · {footer.email}</span><span><Link to="/pages/privacy">{footer.privacyLabel}</Link> · <Link to="/pages/terms">{footer.termsLabel}</Link></span></footer>}
     </main>
   );
 }
