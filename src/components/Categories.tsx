@@ -203,7 +203,7 @@ function isFoodCategory(categoryName: string): boolean {
   return !LIFESTYLE_CATEGORY_NAMES.has(categoryName.trim().toLowerCase());
 }
 
-function Categories() {
+function Categories({ content = {} }: { content?: Record<string, string> }) {
   const { data: serverCategories } = useGetCategoriesQuery();
   const { scrollRef, scrollRight } = useSideScroll();
 
@@ -236,8 +236,8 @@ function Categories() {
     <section className="categories-section" aria-labelledby="shop-categories-heading">
       <div className="section-header">
         <div>
-          <h2 id="shop-categories-heading">Shop By Categories</h2>
-          <p className="section-subheading">Browse our freshest harvest, dairy, and artisanal goods</p>
+          <h2 id="shop-categories-heading">{content.title || "Shop By Categories"}</h2>
+          <p className="section-subheading">{content.description || "Browse our freshest harvest, dairy, and artisanal goods"}</p>
         </div>
 
         <div className="section-header-actions">

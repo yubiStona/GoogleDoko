@@ -13,6 +13,7 @@ import { useGetProductsQuery, useGetCategoriesQuery } from "../store/api/apiSlic
 import { ProductSkeletonGrid } from "../components/product/ProductSkeleton";
 import categoriesHeroBanner from "../assets/images/categories/categories-hero-banner.png";
 import categoryBottomPromo from "../assets/images/categories/category-bottom-promo.png";
+import { api, type PublicWebsitePage } from "../api/client";
 
 const defaultCategoryOptions = [
     "All",
@@ -70,6 +71,8 @@ function CategoriesPage() {
 
     const { data: serverProducts, isLoading } = useGetProductsQuery();
     const { data: serverCategories } = useGetCategoriesQuery();
+    const [pageContent, setPageContent] = useState<PublicWebsitePage | null>(null);
+    useEffect(() => { let active = true; void api.getPublishedPage("categories").then((page) => { if (active) setPageContent(page); }).catch(() => undefined); return () => { active = false; }; }, []);
 
     const categoryOptions = useMemo(() => {
         if (serverCategories && serverCategories.length > 0) {
@@ -153,10 +156,11 @@ function CategoriesPage() {
                     <section className="categories-hero-banner-section">
                         <div className="categories-hero-banner-container">
                             <img
-                                src={categoriesHeroBanner}
+                                src={pageContent?.heroImage || categoriesHeroBanner}
                                 alt="Our Categories - Fresh Choices for a Healthier You"
                                 className="categories-hero-banner-img"
                             />
+                            {(pageContent?.title || pageContent?.description) && <div className="cms-category-hero-copy"><h1>{pageContent.title}</h1><p>{pageContent.description}</p></div>}
                         </div>
                     </section>
                 )}
@@ -190,14 +194,14 @@ function CategoriesPage() {
                             {placeFromUrl
                                 ? placeFromUrl.split(",")[0].trim()
                                 : selectedCategory === "All"
-                                    ? "All Products"
+                                    ? pageContent?.sectionTitle || "All Products"
                                     : selectedCategory}
                         </h2>
 
                         <p>
                             {placeFromUrl
                                 ? `Products from ${placeFromUrl}`
-                                : "Fresh products, better living"}
+                                : pageContent?.sectionDescription || "Fresh products, better living"}
                         </p>
                     </div>
 
@@ -244,15 +248,16 @@ function CategoriesPage() {
                     <section className="category-bottom-promo-section">
                         <div className="category-bottom-promo-container">
                             <Link
-                                to="/shop"
+                                to={pageContent?.promoHref || "/shop"}
                                 className="category-bottom-promo-card"
                                 aria-label="Fresh Products Better Living - Buy Now"
                             >
                                 <img
-                                    src={categoryBottomPromo}
-                                    alt="Fresh Products Better Living - Buy Now"
+                                    src={pageContent?.promoImage || categoryBottomPromo}
+                                    alt={pageContent?.promoTitle || "Fresh Products Better Living - Buy Now"}
                                     className="category-bottom-promo-img"
                                 />
+                                {(pageContent?.promoTitle || pageContent?.promoDescription || pageContent?.promoButton) && <span className="cms-category-promo-copy"><strong>{pageContent.promoTitle}</strong><small>{pageContent.promoDescription}</small><b>{pageContent.promoButton || "Explore"}</b></span>}
                             </Link>
                         </div>
                     </section>

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-function OrganicPromo() {
+function OrganicPromo({ content = {} }: { content?: Record<string, string> }) {
   return (
     <section className="organic-promo-section">
       <div className="organic-promo-container">
@@ -9,7 +9,7 @@ function OrganicPromo() {
           <div className="organic-promo-circle"></div>
 
           <img
-            src="/src/frontend/assets/images/organic-vegetables.jpg"
+            src={content.image || "/src/frontend/assets/images/organic-vegetables.jpg"}
             alt="Fresh organic vegetables"
             className="organic-promo-image"
           />
@@ -22,24 +22,21 @@ function OrganicPromo() {
 
         {/* Right Side - Content */}
         <div className="organic-promo-content">
-          <h2>Fresh and Organic Vegetables Every Day</h2>
+          <h2>{content.title || "Fresh and Organic Vegetables Every Day"}</h2>
 
           <h3>
-            Healthy and fresh products, delivered directly to your doorstep.
+            {content.subtitle || "Healthy and fresh products, delivered directly to your doorstep."}
           </h3>
 
           <p>
-            Discover fresh vegetables and quality agricultural products from
-            trusted local farmers. We carefully select our products to provide
-            you with healthy, natural, and affordable choices for your everyday
-            needs.
+            {content.description || "Discover fresh vegetables and quality agricultural products from trusted local farmers. We carefully select our products to provide you with healthy, natural, and affordable choices for your everyday needs."}
           </p>
 
           <Link
             to="/categories?category=Vegetables"
             className="organic-promo-button"
           >
-            Shop Now
+            {content.button || "Shop Now"}
           </Link>
         </div>
       </div>

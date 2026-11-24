@@ -12,6 +12,7 @@ import { AccountProvider } from "./context/AccountContext";
 import { AuthFlowProvider } from "./context/AuthFlowContext";
 
 import LandingPage from "./pages/LandingPage";
+import LifestyleComingSoon from "./pages/LifestyleComingSoon";
 import Home from "./pages/Home";
 import CategoriesPage from "./pages/CategoriesPage";
 import Orders from "./pages/Orders";
@@ -26,6 +27,7 @@ import OrderDetail from "./pages/OrderDetail";
 import Support from "./pages/Support";
 import DeliveryInfo from "./pages/DeliveryInfo";
 import About from "./pages/About";
+import PublishedContentPage from "./pages/PublishedContentPage";
 import Wishlist from "./pages/Wishlist";
 import Account from "./pages/Account";
 import AccountProfile from "./pages/account/AccountProfile";
@@ -141,9 +143,11 @@ function App() {
           <Route path="/places" element={<LocalPlaces />} />
           <Route path="/places/:slug" element={<PlaceDetailPage />} />
           <Route path="/lifestyle" element={<LifestyleLanding />} />
+          <Route path="/lifestyle-coming-soon" element={<LifestyleComingSoon />} />
           <Route path="/lifestyle/:slug" element={<LifestyleCollectionPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />
+          <Route path="/pages/:slug" element={<PublishedContentPage />} />
           <Route
             path="/wishlist"
             element={

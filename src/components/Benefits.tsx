@@ -40,13 +40,14 @@ const benefits = [
   },
 ];
 
-function Benefits() {
+function Benefits({ content = {} }: { content?: Record<string, string> }) {
   return (
     <section className="benefits-section">
       <div className="benefits-heading">
         <span className="heading-line"></span>
 
-        <p>Explore the land of mountains and vibrant culture</p>
+        <p>{content.title || "Explore the land of mountains and vibrant culture"}</p>
+        {content.description && <small>{content.description}</small>}
 
         <span className="heading-line"></span>
       </div>
@@ -61,9 +62,9 @@ function Benefits() {
                 <Icon size={48} strokeWidth={2.5} />
               </div>
 
-              <h3>{benefit.title}</h3>
+              <h3>{content[`item${benefit.id}Title`] || benefit.title}</h3>
 
-              <p>{benefit.description}</p>
+              <p>{content[`item${benefit.id}Description`] || benefit.description}</p>
             </div>
           );
         })}
