@@ -1,8 +1,9 @@
 import { ArrowDown, ArrowRight, ArrowUpRight, Heart, Leaf, Search, ShoppingBag, Sparkles } from "lucide-react";
 import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { api, type PublicLandingContent } from "../api/client";
 import { useCart } from "../context/CartContext";
-import { useGetLandingPageContentQuery } from "../store/api/hero";
 import "../styles/landing.css";
 
 export function LandingBrand() {
@@ -26,7 +27,14 @@ export function LandingBrand() {
 
 export default function LandingPage() {
   const { cartItems } = useCart();
-  const { data } = useGetLandingPageContentQuery();
+  const [data, setData] = useState<PublicLandingContent | null>(null);
+  useEffect(() => {
+    let active = true;
+    const load = () => api.getPublicLandingContent().then((content) => { if (active) setData(content); }).catch(() => undefined);
+    void load();
+    const timer = window.setInterval(load, 60_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const page = data ?? {
@@ -69,7 +77,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="landing-intro" aria-labelledby="landing-title">
+      {(page.visibility?.hero ?? 1) !== 0 && <section className="landing-intro" aria-labelledby="landing-title">
         <div className="landing-intro-copy">
           <p className="landing-script-tagline"><span />{page.eyebrow}<span /></p>
           <h1 id="landing-title">
@@ -82,32 +90,23 @@ export default function LandingPage() {
           <p className="landing-intro-description">{page.description}</p>
         </div>
         <a className="landing-scroll-cue" href="#explore"><span>Discover your Doko</span><ArrowDown size={17} /></a>
-      </section>
+      </section>}
 
       <section className="landing-explore" id="explore" aria-label="Choose what to explore">
-        <Link to={page.food.href} className="landing-choice landing-choice-food">
-          <img src={page.food.image} alt={page.food.imageAlt} className="landing-choice-image" />
+        {([
+          ...(page.visibility?.food === 0 ? [] : [{ key: "food", data: page.food, style: "landing-choice-food" }]),
+          ...(page.visibility?.lifestyle === 0 ? [] : [{ key: "lifestyle", data: page.lifestyle, style: "landing-choice-lifestyle" }]),
+        ]).sort((a, b) => (page.displayOrder?.[a.key] ?? 0) - (page.displayOrder?.[b.key] ?? 0)).map(({ key, data: choice, style }) => <Link key={key} to={choice.href} className={`landing-choice ${style}`}>
+          <img src={choice.image} alt={choice.imageAlt} className="landing-choice-image" />
           <span className="landing-choice-shade" />
           <span className="landing-choice-content">
-            <span className="landing-choice-eyebrow"><Leaf size={15} /> {page.food.eyebrow}</span>
-            <strong className="landing-choice-title">{page.food.title}</strong>
-            <span className="landing-choice-description">{page.food.description}</span>
-            <span className="landing-choice-button">{page.food.button}<ArrowRight size={17} /></span>
+            <span className="landing-choice-eyebrow">{key === "food" ? <Leaf size={15} /> : <Sparkles size={15} />} {choice.eyebrow}</span>
+            <strong className="landing-choice-title">{choice.title}</strong>
+            <span className="landing-choice-description">{choice.description}</span>
+            <span className="landing-choice-button">{choice.button}<ArrowRight size={17} /></span>
           </span>
           <span className="landing-choice-corner"><ArrowUpRight size={19} /></span>
-        </Link>
-
-        <Link to={page.lifestyle.href} className="landing-choice landing-choice-lifestyle">
-          <img src={page.lifestyle.image} alt={page.lifestyle.imageAlt} className="landing-choice-image" />
-          <span className="landing-choice-shade" />
-          <span className="landing-choice-content">
-            <span className="landing-choice-eyebrow"><Sparkles size={15} /> {page.lifestyle.eyebrow}</span>
-            <strong className="landing-choice-title">{page.lifestyle.title}</strong>
-            <span className="landing-choice-description">{page.lifestyle.description}</span>
-            <span className="landing-choice-button">{page.lifestyle.button}<ArrowRight size={17} /></span>
-          </span>
-          <span className="landing-choice-corner"><ArrowUpRight size={19} /></span>
-        </Link>
+        </Link>)}
       </section>
 
       <section className="landing-promise" aria-label="Why shop GoogleDoko">

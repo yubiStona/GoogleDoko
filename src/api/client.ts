@@ -35,6 +35,41 @@ export class ApiError extends Error {
   }
 }
 
+export interface PublicBusinessSettings {
+  supportPhone: string;
+  supportEmail: string;
+  businessName: string;
+  supportAddress: string;
+  businessHours: string;
+  mapsUrl: string;
+  socialLinks: Record<string, string>;
+}
+
+export interface PublicWebsitePage {
+  slug: string;
+  redirect: boolean;
+  navigationVisible: boolean;
+  displayOrder: number;
+  title: string;
+  description: string;
+  body: string;
+  heroImage: string;
+  imageAlt: string;
+  seoTitle: string;
+  metaDescription: string;
+  socialTitle: string;
+  socialDescription: string;
+  ogImage: string;
+}
+
+export interface PublicLandingContent {
+  eyebrow: string; title: string; description: string; backgroundImage: string;
+  visibility?: { hero?: number; food?: number; lifestyle?: number };
+  displayOrder?: Record<string, number>;
+  food: { eyebrow: string; title: string; description: string; button: string; image: string; imageAlt: string; href: string };
+  lifestyle: { eyebrow: string; title: string; description: string; button: string; image: string; imageAlt: string; href: string };
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
@@ -80,6 +115,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  getPublicLandingContent: () => request<PublicLandingContent>("/api/landing"),
+  getPublicBusinessSettings: () => request<PublicBusinessSettings>("/api/settings"),
+  getPublishedPage: (slug: string) => request<PublicWebsitePage>(`/api/pages/${encodeURIComponent(slug)}`),
   products: () => request<AdminProduct[]>("/api/products"),
   resetPassword: (payload: { email: string; token: string; password?: string; newPassword?: string } | { token: string; password: string; email?: string }) => {
     const email = "email" in payload && payload.email ? payload.email : "";

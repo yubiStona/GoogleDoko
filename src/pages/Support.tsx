@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SupportModal from "../components/SupportModal";
 import TopBar from "../components/TopBar";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
+import { api, type PublicBusinessSettings } from "../api/client";
 
 function Support() {
   const [open, setOpen] = useState(false);
+  const [business, setBusiness] = useState<PublicBusinessSettings | null>(null);
+  useEffect(() => { void api.getPublicBusinessSettings().then(setBusiness).catch(() => undefined); }, []);
   return (
     <>
       <TopBar />
@@ -20,7 +23,9 @@ function Support() {
               Track your delivery, ask about payments, or get help
               from our support team.
             </p>
-            <p><a href="mailto:support@googledoko.com">support@googledoko.com</a></p>
+            <p><a href={`mailto:${business?.supportEmail || "support@googledoko.com"}`}>{business?.supportEmail || "support@googledoko.com"}</a></p>
+            {business?.supportPhone && <p><a href={`tel:${business.supportPhone}`}>{business.supportPhone}</a></p>}
+            {business?.businessHours && <p>{business.businessHours}</p>}
             <button className="auth-btn" type="button" onClick={() => setOpen(true)}>Contact Support</button>
             
           </div>

@@ -18,8 +18,12 @@ import {
 import { Link } from "react-router-dom";
 import LogoMark from "../LogoMark";
 import { adminVendorPortalUrl } from "../../utils/adminVendorPortal";
+import { useEffect, useState } from "react";
+import { api, type PublicBusinessSettings } from "../../api/client";
 
 function Footer() {
+  const [business, setBusiness] = useState<PublicBusinessSettings | null>(null);
+  useEffect(() => { void api.getPublicBusinessSettings().then(setBusiness).catch(() => undefined); }, []);
   return (
     <footer className="footer">
       {/* Main Footer */}
@@ -214,19 +218,19 @@ function Footer() {
             <div className="contact-item">
               <MapPin size={25} className="contact-icon orange" />
 
-              <p>Kathmandu, Nepal</p>
+              <p>{business?.supportAddress || "Kathmandu, Nepal"}</p>
             </div>
 
             <div className="contact-item">
               <Phone size={23} className="contact-icon orange" />
 
-              <p>+977 111-111-1111</p>
+              <p>{business?.supportPhone || "+977 111-111-1111"}</p>
             </div>
 
             <div className="contact-item">
               <Mail size={23} className="contact-icon orange" />
 
-              <p>support@googledoko.com</p>
+              <p>{business?.supportEmail || "support@googledoko.com"}</p>
             </div>
           </div>
         </div>
