@@ -1,36 +1,33 @@
 import { MapPin, Leaf, Truck, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
-function Hero() {
+function Hero({ content = {} }: { content?: Record<string, string> }) {
   return (
     <section className="hero-section">
       <div className="hero-content">
 
         {/* Left Content */}
         <div className="hero-text">
-          <p className="hero-kicker">From local places across Nepal</p>
+          <p className="hero-kicker">{content.eyebrow || "From local places across Nepal"}</p>
 
           <h1>
-            Discover authentic products{" "}
-            <br className="hero-desktop-br" />
-            from their original places.
+            {content.title || "Discover authentic products from their original places."}
           </h1>
 
           <p>
-            Shop fresh fruits, vegetables, groceries and discover
-            authentic local products from trusted sellers.
+            {content.description || "Shop fresh fruits, vegetables, groceries and discover authentic local products from trusted sellers."}
           </p>
 
           {/* Buttons */}
           <div className="hero-buttons">
 
             <Link to="/shop" className="primary-button">
-              Shop Now
+              {content.primaryButton || "Shop Now"}
             </Link>
 
             <Link to="/places" className="secondary-button">
               <MapPin size={20} className="hero-btn-icon" />
-              Explore Local Places
+              {content.secondaryButton || "Explore Local Places"}
             </Link>
 
           </div>
@@ -77,8 +74,8 @@ function Hero() {
         {/* Right Image */}
         <div className="hero-image">
           <img
-            src="/src/frontend/assets/images/hero-vegetables.png"
-            alt="Fresh vegetables in a basket"
+            src={content.image || "/src/frontend/assets/images/hero-vegetables.png"}
+            alt={content.imageAlt || "Fresh vegetables in a basket"}
           />
         </div>
 
