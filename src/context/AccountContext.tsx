@@ -105,8 +105,29 @@ function readBool(key: string, fallback: boolean) {
   return saved === "true";
 }
 
+function initializeIncomingToken(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const incomingToken = searchParams.get("auth_token") || searchParams.get("token") || hashParams.get("token");
+    if (incomingToken) {
+      setToken(incomingToken, true);
+      searchParams.delete("auth_token");
+      searchParams.delete("token");
+      const cleanSearch = searchParams.toString() ? `?${searchParams.toString()}` : "";
+      const cleanHash = window.location.hash && !window.location.hash.includes("token") ? window.location.hash : "";
+      window.history.replaceState({}, document.title, window.location.pathname + cleanSearch + cleanHash);
+      return incomingToken;
+    }
+  } catch {
+    // Ignore URL parsing errors
+  }
+  return getToken();
+}
+
 function readLoggedIn() {
-  return Boolean(getToken());
+  return Boolean(initializeIncomingToken());
 }
 
 function asRole(role: string | undefined): AccountRole {
@@ -158,7 +179,7 @@ function userFromSession(payload: SessionPayload, prevUser?: MockUser): MockUser
 }
 
 export function AccountProvider({ children }: { children: ReactNode }) {
-  const [loadingSession, setLoadingSession] = useState(Boolean(getToken()));
+  const [loadingSession, setLoadingSession] = useState(() => Boolean(initializeIncomingToken()));
   const [isLoggedIn, setIsLoggedIn] = useState(() => readLoggedIn());
   const [user, setUser] = useState<MockUser>(() => {
     const saved = readJson<MockUser>("googledoko-user", defaultMockUser);

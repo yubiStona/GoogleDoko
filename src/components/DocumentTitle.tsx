@@ -89,6 +89,10 @@ export function pageTitle(pathname: string, search: string) {
     return titleFromParts(["About Us"]);
   }
 
+  if (pathname === "/our-story") {
+    return titleFromParts(["Our Story"]);
+  }
+
   if (pathname === "/wishlist") {
     return titleFromParts(["Wishlist"]);
   }

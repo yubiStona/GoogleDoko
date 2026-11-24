@@ -1,66 +1,73 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { Provider } from "react-redux";
+import { store } from "../store";
 import LandingPage from "../pages/LandingPage";
 import { CartProvider } from "../context/CartContext";
 
-const mockNavigate = vi.fn();
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
-
 function renderLanding() {
   return render(
-    <MemoryRouter initialEntries={["/"]}>
-      <CartProvider>
-        <LandingPage />
-      </CartProvider>
-    </MemoryRouter>
+    <Provider store={store}>
+      <MemoryRouter initialEntries={["/"]}>
+        <CartProvider>
+          <LandingPage />
+        </CartProvider>
+      </MemoryRouter>
+    </Provider>
   );
 }
 
 describe("LandingPage Component Tests", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          clone() {
+            return this;
+          },
+          headers: new Headers({ "content-type": "application/json" }),
+          json: () => Promise.resolve({ success: true, data: null }),
+          text: () => Promise.resolve(JSON.stringify({ success: true, data: null })),
+        })
+      )
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("renders the main title, taglines, and navigation elements", () => {
     renderLanding();
 
-    expect(screen.getByText(/Discover · Shop · Enjoy/i)).toBeInTheDocument();
-    expect(screen.getByText(/Welcome to Google/i)).toBeInTheDocument();
-    expect(screen.getByText(/Good Food. Better Choices. Local Love./i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Welcome to/i);
+    expect(screen.getAllByText(/Good food\. Better choices\. Local love\./i).length).toBeGreaterThan(0);
 
     // Check navbar links
-    expect(screen.getByText("Home")).toBeInTheDocument();
-    expect(screen.getByText("About")).toBeInTheDocument();
-    expect(screen.getByText("Contact")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Explore" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Our story" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Contact" })).toBeInTheDocument();
   });
 
-  it("navigates to /food when clicking 'Explore Food'", () => {
+  it("renders both modern cards matching the latest design", () => {
     renderLanding();
 
-    const exploreFoodBtn = screen.getByTestId("explore-food-btn");
-    expect(exploreFoodBtn).toBeInTheDocument();
+    // Food Card (Second Screenshot)
+    expect(screen.getByText("Food with a place of origin.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Shop farm fresh produce and traditional favourites from local growers.")
+    ).toBeInTheDocument();
+    expect(screen.getByText("Explore food")).toBeInTheDocument();
 
-    fireEvent.click(exploreFoodBtn);
-    expect(mockNavigate).toHaveBeenCalledWith("/food");
-  });
-
-  it("shows 'Coming Soon' modal when clicking 'Explore Lifestyle'", () => {
-    renderLanding();
-
-    const exploreLifestyleBtn = screen.getByTestId("explore-lifestyle-btn");
-    expect(exploreLifestyleBtn).toBeInTheDocument();
-
-    fireEvent.click(exploreLifestyleBtn);
-
-    // Modal should be visible with "Coming Soon"
-    expect(screen.getByText(/Coming Soon/i)).toBeInTheDocument();
-
-    // Close button dismisses modal
-    const closeBtn = screen.getByRole("button", { name: /Close notification/i });
-    fireEvent.click(closeBtn);
-    expect(screen.queryByText(/Coming Soon/i)).not.toBeInTheDocument();
+    // Lifestyle Card (Second Screenshot)
+    expect(screen.getByText("Bring local craft into your home.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Find thoughtful home, fashion, and handmade goods from Nepalese makers.")
+    ).toBeInTheDocument();
+    expect(screen.getByText("Explore lifestyle")).toBeInTheDocument();
   });
 });

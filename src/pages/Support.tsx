@@ -1,36 +1,5 @@
-import { useState } from "react";
-import SupportModal from "../components/SupportModal";
-import TopBar from "../components/TopBar";
-import Navbar from "../components/layout/Navbar";
-import Footer from "../components/layout/Footer";
+import LandingPage from "./LandingPage";
 
-function Support() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <TopBar />
-      <Navbar />
-
-      <main className="shop-page">
-        <section className="shop-banner">
-          <div className="shop-banner-content">
-            <span>CONTACT SUPPORT</span>
-            <h1>We are here to help with your orders</h1>
-            <p>
-              Track your delivery, ask about payments, or get help
-              from our support team.
-            </p>
-            <p><a href="mailto:support@googledoko.com">support@googledoko.com</a></p>
-            <button className="auth-btn" type="button" onClick={() => setOpen(true)}>Contact Support</button>
-            
-          </div>
-        </section>
-      </main>
-
-      <SupportModal open={open} onClose={() => setOpen(false)} />
-      <Footer />
-    </>
-  );
+export default function Support() {
+  return <LandingPage initialTab="contact" />;
 }
-
-export default Support;

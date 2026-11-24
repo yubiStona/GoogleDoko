@@ -7,7 +7,7 @@ export function adminVendorPortalUrl(path: string): string {
   if (!baseUrl) {
     const { protocol, hostname } = window.location;
     baseUrl = hostname === "localhost" || hostname === "127.0.0.1"
-      ? `${protocol}//${hostname}:5174`
+      ? `${protocol}//127.0.0.1:5174`
       : `${protocol}//admin.${hostname.replace(/^www\./, "")}`;
   }
 

@@ -4,15 +4,17 @@ import { NavLink } from "react-router-dom";
 import { useAccount } from "../context/AccountContext";
 import { useCart } from "../context/CartContext";
 import { adminVendorPortalUrl } from "../utils/adminVendorPortal";
+import { getToken } from "../api/client";
 
 function MobileBottomNav() {
   const { isLoggedIn, user } = useAccount();
   const { cartItems } = useCart();
+  const token = getToken();
   const accountHref =
     isLoggedIn && user.role === "admin"
-      ? adminVendorPortalUrl("/admin")
+      ? adminVendorPortalUrl(token ? `/admin?auth_token=${encodeURIComponent(token)}` : "/admin")
       : isLoggedIn && user.role === "vendor"
-        ? adminVendorPortalUrl("/vendor")
+        ? adminVendorPortalUrl(token ? `/vendor?auth_token=${encodeURIComponent(token)}` : "/vendor")
         : "/account";
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
