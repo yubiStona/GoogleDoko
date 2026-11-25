@@ -37,7 +37,7 @@ const reasons = [
   },
 ];
 
-function WhyChooseUs() {
+function WhyChooseUs({ content = {} }: { content?: Record<string, string> }) {
   return (
     <section className="why-choose-us-section">
       <div className="why-choose-us-container">
@@ -50,7 +50,7 @@ function WhyChooseUs() {
             <span className="why-heading-line"></span>
           </div>
 
-          <h2>Why Choose Us</h2>
+          <h2>{content.title || "Why Choose Us"}</h2>
 
           <div className="why-heading-decoration right">
             <span className="why-heading-line"></span>
@@ -74,9 +74,9 @@ function WhyChooseUs() {
                 />
               </div>
 
-              <h3>{reason.title}</h3>
+              <h3>{content[`item${reason.id}Title`] || reason.title}</h3>
 
-              <p>{reason.description}</p>
+              <p>{content[`item${reason.id}Description`] || reason.description}</p>
             </article>
           ))}
         </div>

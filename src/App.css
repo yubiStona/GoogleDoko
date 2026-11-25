@@ -4292,10 +4292,14 @@ main {
 }
 
 .categories-hero-banner-container {
+  position: relative;
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
 }
+.cms-category-hero-copy { position: absolute; left: clamp(20px, 5vw, 64px); bottom: clamp(16px, 4vw, 44px); max-width: min(520px, 72%); padding: 18px 22px; border-radius: 18px; color: #fff; background: rgba(18, 54, 36, .78); backdrop-filter: blur(8px); }
+.cms-category-hero-copy h1 { margin: 0 0 5px; color: inherit; font-size: clamp(20px, 3vw, 34px); }
+.cms-category-hero-copy p { margin: 0; color: inherit; }
 
 .categories-hero-banner-img {
   width: 100%;
@@ -4688,6 +4692,7 @@ main {
 }
 
 .category-bottom-promo-card {
+  position: relative;
   display: block;
   width: 100%;
   border-radius: 20px;
@@ -4697,6 +4702,9 @@ main {
   cursor: pointer;
   text-decoration: none;
 }
+.cms-category-promo-copy { position: absolute; right: 5%; bottom: 10%; display: grid; gap: 6px; width: min(42%, 360px); padding: 18px; border-radius: 18px; color: #fff; background: rgba(19, 69, 43, .82); backdrop-filter: blur(7px); }
+.cms-category-promo-copy strong { font-size: 21px; }
+.cms-category-promo-copy b { justify-self: start; margin-top: 5px; padding: 8px 13px; border-radius: 999px; color: #153c29; background: #fff; }
 
 .category-bottom-promo-card:hover {
   transform: translateY(-2px);

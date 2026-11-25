@@ -46,7 +46,7 @@ const fallbackOffers: OfferItem[] = [
   },
 ];
 
-function SpecialOffers() {
+function SpecialOffers({ content = {} }: { content?: Record<string, string> }) {
   const { data: serverOffers } = useGetOffersQuery();
 
   const offers: OfferItem[] = (serverOffers?.banners && serverOffers.banners.length > 0)
@@ -71,8 +71,8 @@ function SpecialOffers() {
   return (
     <section className="offers-section">
       <div className="section-header">
-        <h2>Special Offers</h2>
-        <Link to="/shop" className="section-view-all">
+        <h2>{content.title || "Special Offers"}</h2>
+        <span className="section-subheading">{content.description || "Seasonal picks and offers from local sellers."}</span><Link to="/shop" className="section-view-all">
           View all
         </Link>
       </div>

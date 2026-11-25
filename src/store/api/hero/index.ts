@@ -7,6 +7,8 @@ export interface LandingPageContent {
   title: string;
   description: string;
   backgroundImage: string;
+  visibility?: { hero?: number; food?: number; lifestyle?: number };
+  displayOrder?: Record<string, number>;
   food: {
     eyebrow: string;
     title: string;
@@ -34,6 +36,7 @@ export const offerApi = createApi({
   endpoints: (builder) => ({
     getLandingPageContent: builder.query<LandingPageContent, void>({
       query: () => "/landing",
+      keepUnusedDataFor: 0,
     }),
     getOffers: builder.query<OffersResponse, void>({
       query: () => "/offers",

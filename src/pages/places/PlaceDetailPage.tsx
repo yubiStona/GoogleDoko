@@ -20,6 +20,7 @@ import Pagination from "../../components/Pagination";
 import { ProductSkeletonGrid } from "../../components/product/ProductSkeleton";
 import {
   api,
+  getMediaUrl,
   type ApiPlace,
   type PlaceCategorySummary,
   type PlaceProductsResponse,
@@ -261,7 +262,7 @@ export default function PlaceDetailPage() {
     !!maxPriceParam ||
     sortParam !== "popular";
 
-  const bannerImage = place ? getPlaceImage(place.id) : getPlaceImage(currentSlug);
+  const bannerImage = place?.image && (/^https?:\/\//i.test(place.image) || place.image.startsWith("/uploads/")) ? getMediaUrl(place.image) : place ? getPlaceImage(place.id) : getPlaceImage(currentSlug);
   const placeName = place?.name || currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1);
   const totalItemsCount = place?.itemCount ?? productsData?.total ?? 0;
   const productsList = productsData?.products || [];
@@ -299,11 +300,11 @@ export default function PlaceDetailPage() {
             <div className="place-hero-content">
               <div className="place-hero-badge">
                 <Leaf size={14} />
-                <span>AUTHENTIC REGIONAL ORIGIN</span>
+                <span>{place?.heroEyebrow || "AUTHENTIC REGIONAL ORIGIN"}</span>
               </div>
 
               <h1 className="place-hero-title">
-                Explore {placeName}
+                {place?.heroTitle || `Explore ${placeName}`}
               </h1>
 
               <div className="place-hero-origin-pill">

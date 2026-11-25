@@ -61,7 +61,7 @@ const steps = [
   },
 ];
 
-function HowItWorks() {
+function HowItWorks({ content = {} }: { content?: Record<string, string> }) {
   return (
     <section className="how-it-works-section">
       <div className="how-it-works-container">
@@ -73,7 +73,7 @@ function HowItWorks() {
             <span className="heading-line"></span>
           </div>
 
-          <h2>How It Works</h2>
+          <h2>{content.title || "How It Works"}</h2>
 
           <div className="heading-decoration right">
             <span className="heading-line"></span>
@@ -82,7 +82,7 @@ function HowItWorks() {
         </div>
 
         <p className="how-it-works-subtitle">
-          From fresh farms to your doorstep in 4 simple steps
+          {content.description || "From fresh farms to your doorstep in 4 simple steps"}
         </p>
 
         {/* Steps */}
@@ -100,9 +100,9 @@ function HowItWorks() {
                 </div>
 
                 {/* Text */}
-                <h3>{step.title}</h3>
+                <h3>{content[`step${index + 1}Title`] || step.title}</h3>
 
-                <p>{step.description}</p>
+                <p>{content[`step${index + 1}Description`] || step.description}</p>
               </div>
 
               {/* Arrow between steps */}

@@ -23,6 +23,11 @@ export function clearToken() {
 }
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "";
+export function getMediaUrl(value: string | undefined) {
+  if (!value || /^https?:\/\//i.test(value)) return value || "";
+  if (value.startsWith("/uploads/") && API_BASE) return `${API_BASE.replace(/\/$/, "")}${value}`;
+  return value;
+}
 
 export class ApiError extends Error {
   status?: number;
@@ -33,6 +38,52 @@ export class ApiError extends Error {
     this.status = status;
     this.data = data;
   }
+}
+
+export interface PublicBusinessSettings {
+  supportPhone: string;
+  supportEmail: string;
+  businessName: string;
+  supportAddress: string;
+  businessHours: string;
+  mapsUrl: string;
+  socialLinks: Record<string, string>;
+  footerContent?: Record<string, string>;
+  footerVisible?: boolean;
+}
+
+export interface PublicWebsitePage {
+  slug: string;
+  redirect: boolean;
+  navigationVisible: boolean;
+  displayOrder: number;
+  title: string;
+  description: string;
+  body: string;
+  heroImage: string;
+  imageAlt: string;
+  seoTitle: string;
+  metaDescription: string;
+  socialTitle: string;
+  socialDescription: string;
+  ogImage: string;
+  sectionTitle?: string;
+  sectionDescription?: string;
+  promoTitle?: string;
+  promoDescription?: string;
+  promoImage?: string;
+  promoButton?: string;
+  promoHref?: string;
+}
+export interface PublicNavigationItem { slug: string; title: string; displayOrder: number; }
+
+export interface PublicLandingContent {
+  eyebrow: string; title: string; description: string; backgroundImage: string;
+  visibility?: Record<string, number>;
+  displayOrder?: Record<string, number>;
+  sections?: Record<string, Record<string, string>>;
+  food: { eyebrow: string; title: string; description: string; button: string; image: string; imageAlt: string; href: string };
+  lifestyle: { eyebrow: string; title: string; description: string; button: string; image: string; imageAlt: string; href: string };
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -80,6 +131,17 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+  getPublicLandingContent: () => request<PublicLandingContent>("/api/landing"),
+  getPublicNavigation: () => request<PublicNavigationItem[]>("/api/navigation"),
+  getPublicBusinessSettings: () => request<PublicBusinessSettings>("/api/settings"),
+  getPublishedPage: async (slug: string) => {
+    const page = await request<PublicWebsitePage>(`/api/pages/${encodeURIComponent(slug)}`);
+    for (const key of ["heroImage", "ogImage", "promoImage"] as const) {
+      const value = page[key];
+      if (value) page[key] = getMediaUrl(value);
+    }
+    return page;
+  },
   products: () => request<AdminProduct[]>("/api/products"),
   resetPassword: (payload: { email: string; token: string; password?: string; newPassword?: string } | { token: string; password: string; email?: string }) => {
     const email = "email" in payload && payload.email ? payload.email : "";
@@ -439,6 +501,8 @@ export interface ApiPlace {
   image: string;
   description: string;
   activeCategoriesCount?: number;
+  heroEyebrow?: string;
+  heroTitle?: string;
 }
 
 export interface PlaceCategorySummary {

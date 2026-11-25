@@ -105,7 +105,7 @@ function resolvePlaceImage(origin?: string) {
   );
 }
 
-export default function ShopByLocalAreas() {
+export default function ShopByLocalAreas({ content = {} }: { content?: Record<string, string> }) {
   const { data: serverPlaces } = useGetPlacesQuery();
 
   const { scrollRef, scrollRight } = useSideScroll();
@@ -137,10 +137,9 @@ export default function ShopByLocalAreas() {
     >
       <div className="section-header">
         <div>
-          <h2 id="shop-local-areas-heading">Shop by Local Areas</h2>
+          <h2 id="shop-local-areas-heading">{content.title || "Shop by Local Areas"}</h2>
           <p className="section-subheading">
-            Discover authentic local products sourced directly from their
-            original regions
+            {content.description || "Discover authentic local products sourced directly from their original regions"}
           </p>
         </div>
 

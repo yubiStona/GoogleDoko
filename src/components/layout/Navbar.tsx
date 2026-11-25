@@ -25,7 +25,7 @@ import { useWishlist } from "../../context/WishlistContext";
 import LogoMark from "../LogoMark";
 import MobileBottomNav from "../MobileBottomNav";
 import { adminVendorPortalUrl } from "../../utils/adminVendorPortal";
-import { getToken } from "../../api/client";
+import { api, getToken, type PublicNavigationItem } from "../../api/client";
 
 function Navbar() {
   const location = useLocation();
@@ -56,6 +56,7 @@ function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [cmsNavItems, setCmsNavItems] = useState<PublicNavigationItem[]>([]);
   const searchWrapRef = useRef<HTMLFormElement>(null);
   const categoriesDropdownRef = useRef<HTMLDivElement>(null);
   const categoriesTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -101,6 +102,8 @@ function Navbar() {
     document.body.classList.add("has-site-nav");
     return () => document.body.classList.remove("has-site-nav");
   }, []);
+
+  useEffect(() => { let active = true; void api.getPublicNavigation().then((items) => { if (active) setCmsNavItems(items); }).catch(() => undefined); return () => { active = false; }; }, []);
 
   useEffect(() => {
     document.body.classList.toggle("nav-menu-open", menuOpen);
@@ -301,6 +304,7 @@ function Navbar() {
             >
               Orders
             </NavLink>
+            {cmsNavItems.map((item) => <NavLink key={item.slug} to={`/pages/${encodeURIComponent(item.slug)}`} className={({ isActive }) => isActive ? "active" : ""}>{item.title}</NavLink>)}
           </div>
 
           <form
@@ -503,6 +507,7 @@ function Navbar() {
             <Package size={18} />
             Orders
           </NavLink>
+          {cmsNavItems.map((item) => <NavLink key={item.slug} to={`/pages/${encodeURIComponent(item.slug)}`} onClick={closeMenu}>{item.title}</NavLink>)}
           <NavLink to="/wishlist" onClick={closeMenu}>
             <Heart size={18} />
             Wishlist

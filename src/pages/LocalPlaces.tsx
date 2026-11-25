@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -11,6 +11,7 @@ import Pagination, {
 } from "../components/Pagination";
 
 import { useGetPlacesQuery, useGetProductsQuery } from "../store/api/apiSlice";
+import { api, getMediaUrl, type PublicWebsitePage } from "../api/client";
 
 const placeImages = import.meta.glob("../assets/images/places/*.jpg", {
   eager: true,
@@ -28,6 +29,8 @@ function placeImage(origin: string) {
 
 function LocalPlaces() {
   const [page, setPage] = useState(1);
+  const [pageContent, setPageContent] = useState<PublicWebsitePage | null>(null);
+  useEffect(() => { let active = true; void api.getPublishedPage("places").then((content) => { if (active) setPageContent(content); }).catch(() => undefined); return () => { active = false; }; }, []);
   const {
     data: serverPlaces,
     isLoading: placesLoading,
@@ -50,7 +53,7 @@ function LocalPlaces() {
         products: p.itemCount ?? p.productsCount ?? 0,
         sold: p.soldCount ?? p.totalSold ?? 0,
         description: p.description || "",
-        image: placeImage(p.origin),
+        image: p.image && (/^https?:\/\//i.test(p.image) || p.image.startsWith("/uploads/")) ? getMediaUrl(p.image) : placeImage(p.origin),
       }));
     }
 
@@ -98,21 +101,20 @@ function LocalPlaces() {
       <Navbar />
 
       <main className="shop-page">
-        <section className="shop-banner">
+        <section className="shop-banner" style={pageContent?.heroImage ? { backgroundImage: `linear-gradient(90deg, rgba(13,53,35,.84), rgba(13,53,35,.1)), url("${pageContent.heroImage}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
           <div className="shop-banner-content">
             <span>EXPLORE LOCAL PLACES</span>
-            <h1>Discover authentic products from their original places</h1>
+            <h1>{pageContent?.title || "Discover authentic products from their original places"}</h1>
             <p>
-              Visit trusted farms and local sellers, then shop the
-              products grown in each place.
+              {pageContent?.description || "Visit trusted farms and local sellers, then shop the products grown in each place."}
             </p>
           </div>
         </section>
 
         <section className="all-products-section">
           <div className="all-products-heading">
-            <h2>All Places</h2>
-            <p>Explore authentic local regions and their specialties</p>
+            <h2>{pageContent?.sectionTitle || "All Places"}</h2>
+            <p>{pageContent?.sectionDescription || "Explore authentic local regions and their specialties"}</p>
           </div>
 
           <div className="places-grid">

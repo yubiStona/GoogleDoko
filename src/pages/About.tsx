@@ -8,6 +8,9 @@ import {
   UserRound,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api, type PublicWebsitePage } from "../api/client";
 
 import TopBar from "../components/TopBar";
 import Navbar from "../components/layout/Navbar";
@@ -81,6 +84,12 @@ function AboutKicker({ children }: { children: string }) {
 }
 
 function About() {
+  const navigate = useNavigate();
+  const [cmsPage, setCmsPage] = useState<PublicWebsitePage | null>(null);
+  useEffect(() => { void api.getPublishedPage("about").then((page) => {
+    if (page.redirect) navigate(`/pages/${page.slug}`, { replace: true });
+    else setCmsPage(page);
+  }).catch(() => undefined); }, [navigate]);
   return (
     <>
       <TopBar />
@@ -100,11 +109,11 @@ function About() {
           <section className="about-hero">
             <div className="about-hero-text">
               <span className="about-eyebrow">ABOUT GOOGLE DOKO</span>
-              <h1>Connecting Nepal’s Local Products with the People Who Love Them</h1>
+              <h1>{cmsPage?.title || "Connecting Nepal’s Local Products with the People Who Love Them"}</h1>
               <p>
-                GoogleDoko is a location-based marketplace that helps you
+                {cmsPage?.description || <>GoogleDoko is a location-based marketplace that helps you
                 discover fresh, authentic and locally sourced products from
-                different places across Nepal.
+                different places across Nepal.</>}
               </p>
               <div className="about-hero-actions">
                 <Link to="/shop" className="about-btn-primary">
@@ -148,6 +157,7 @@ function About() {
             <div className="about-story-text">
               <span className="about-eyebrow">OUR STORY</span>
               <h2>Discover the story behind every product.</h2>
+              {cmsPage?.body ? cmsPage.body.split(/\n\s*\n/).map((paragraph, index) => <p key={index}>{paragraph}</p>) : <>
               <p>
                 Every place has something special to offer. From fresh apples
                 grown in the hills to honey, spices, vegetables and traditional
@@ -160,6 +170,7 @@ function About() {
                 can discover where it comes from, learn about its origin and
                 find trusted sellers.
               </p>
+              </>}
             </div>
           </section>
         </div>
