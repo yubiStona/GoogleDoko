@@ -305,7 +305,7 @@ export default function LandingPage({ initialTab }: LandingPageProps) {
             {([
               ...(page.visibility?.food === 0 ? [] : [{ key: "food", data: page.food, style: "landing-choice-food" }]),
               ...(page.visibility?.lifestyle === 0 ? [] : [{ key: "lifestyle", data: page.lifestyle, style: "landing-choice-lifestyle" }]),
-            ]).sort((a, b) => (page.displayOrder?.[a.key] ?? 0) - (page.displayOrder?.[b.key] ?? 0)).map(({ key, data: choice, style }) => (
+            ]).sort((a, b) => ((page.displayOrder as Record<string, number> | undefined)?.[a.key] ?? 0) - ((page.displayOrder as Record<string, number> | undefined)?.[b.key] ?? 0)).map(({ key, data: choice, style }) => (
               <Link key={key} to={choice.href} className={`landing-choice ${style}`}>
                 <img src={choice.image} alt={choice.imageAlt} className="landing-choice-image" />
                 <span className="landing-choice-shade" />
