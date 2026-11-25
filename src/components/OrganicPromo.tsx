@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import organicVegetables from "../assets/images/organic-vegetables.jpg";
 
 function OrganicPromo({ content = {} }: { content?: Record<string, string> }) {
   return (
@@ -9,9 +10,15 @@ function OrganicPromo({ content = {} }: { content?: Record<string, string> }) {
           <div className="organic-promo-circle"></div>
 
           <img
-            src={content.image || "/src/frontend/assets/images/organic-vegetables.jpg"}
+            src={content.image || organicVegetables}
             alt="Fresh organic vegetables"
             className="organic-promo-image"
+            onError={(event) => {
+              if (!event.currentTarget.dataset.fallbackApplied) {
+                event.currentTarget.dataset.fallbackApplied = "true";
+                event.currentTarget.src = organicVegetables;
+              }
+            }}
           />
 
           <div className="organic-promo-discount">
