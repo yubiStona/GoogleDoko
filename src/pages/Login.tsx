@@ -94,15 +94,15 @@ function Login() {
   }
 
   if (isLoggedIn) {
-    if (user.role === "vendor" || user.role === "admin") {
+    if (user.role === "vendor") {
       const token = getToken();
-      const portalPath = user.role === "admin" ? "/admin" : "/vendor";
       const target = adminVendorPortalUrl(
-        token ? `${portalPath}?auth_token=${encodeURIComponent(token)}` : portalPath
+        token ? `/vendor?auth_token=${encodeURIComponent(token)}` : "/vendor"
       );
       window.location.replace(target);
       return null;
     }
+    if (user.role === "admin") return <Navigate to="/" replace />;
     return <Navigate to={postLoginPath(user.role, from)} replace />;
   }
 

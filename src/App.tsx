@@ -232,7 +232,6 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/login/vendor" element={<AdminVendorPortalRedirect />} />
         <Route path="/vendor/*" element={<AdminVendorPortalRedirect />} />
-        <Route path="/admin/*" element={<AdminVendorPortalRedirect />} />
       </Routes>
       </AuthFlowProvider>
     </BrowserRouter>
