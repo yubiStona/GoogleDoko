@@ -25,7 +25,7 @@ import { useWishlist } from "../../context/WishlistContext";
 import LogoMark from "../LogoMark";
 import MobileBottomNav from "../MobileBottomNav";
 import { adminVendorPortalUrl } from "../../utils/adminVendorPortal";
-import { api, type PublicNavigationItem } from "../../api/client";
+import { api, getToken, type PublicNavigationItem } from "../../api/client";
 
 function Navbar() {
   const location = useLocation();
@@ -41,11 +41,12 @@ function Navbar() {
     setImageError(false);
   }
 
+  const token = getToken();
   const accountHref =
     isLoggedIn && user.role === "admin"
-      ? adminVendorPortalUrl("/admin")
+      ? adminVendorPortalUrl(token ? `/admin?auth_token=${encodeURIComponent(token)}` : "/admin")
       : isLoggedIn && user.role === "vendor"
-        ? adminVendorPortalUrl("/vendor")
+        ? adminVendorPortalUrl(token ? `/vendor?auth_token=${encodeURIComponent(token)}` : "/vendor")
         : "/account";
   const [accountOpen, setAccountOpen] = useState(false);
   const { wishlist } = useWishlist();

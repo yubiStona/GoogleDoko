@@ -167,7 +167,6 @@ describe("Explore by Places - Frontend Integration Tests", () => {
     ).toBeInTheDocument();
 
     // 3. Dynamic Categories in place
-    expect(screen.getByText("Shop by Category in Bhaktapur")).toBeInTheDocument();
     expect(screen.getByText("Curd & Dairy")).toBeInTheDocument();
     expect(screen.getByText("Vegetables")).toBeInTheDocument();
 

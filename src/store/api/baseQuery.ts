@@ -8,7 +8,16 @@ const baseQuery = fetchBaseQuery({
     (import.meta.env.MODE === "test" ? "http://localhost:4000/api" : "/api"),
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState).auth?.user?.token;
+    const reduxToken =
+      (getState() as RootState).auth?.user?.token ||
+      (getState() as RootState).auth?.token;
+    const storageToken =
+      typeof window !== "undefined"
+        ? localStorage.getItem("googledoko-token") ||
+          sessionStorage.getItem("googledoko-token") ||
+          localStorage.getItem("gd_token")
+        : null;
+    const token = reduxToken || storageToken;
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }

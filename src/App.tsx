@@ -27,6 +27,7 @@ import OrderDetail from "./pages/OrderDetail";
 import Support from "./pages/Support";
 import DeliveryInfo from "./pages/DeliveryInfo";
 import About from "./pages/About";
+import OurStory from "./pages/OurStory";
 import PublishedContentPage from "./pages/PublishedContentPage";
 import Wishlist from "./pages/Wishlist";
 import Account from "./pages/Account";
@@ -147,6 +148,7 @@ function App() {
           <Route path="/lifestyle/:slug" element={<LifestyleCollectionPage />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/about" element={<About />} />
+          <Route path="/our-story" element={<OurStory />} />
           <Route path="/pages/:slug" element={<PublishedContentPage />} />
           <Route
             path="/wishlist"

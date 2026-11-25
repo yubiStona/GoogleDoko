@@ -11,6 +11,7 @@ import { type AccountRole } from "../data/authOptions";
 import loginProduceImage from "../assets/images/login-produce.jpg";
 import { getFormErrorScrollHandler, scrollToElement } from "../utils/formErrorNavigation";
 import { adminVendorPortalUrl } from "../utils/adminVendorPortal";
+import { getToken } from "../api/client";
 
 const loginSchema = yup.object({
   identifier: yup
@@ -37,7 +38,7 @@ type LoginFormData = yup.InferType<typeof loginSchema>;
 
 function Login() {
   const location = useLocation();
-  const { login, isLoggedIn, user } = useAccount();
+  const { login, isLoggedIn, loadingSession, user } = useAccount();
   const signupState =
     (location.state as {
       from?: string;
@@ -81,7 +82,27 @@ function Login() {
   const password = watch("password");
   const remember = watch("remember");
 
+  if (loadingSession) {
+    return (
+      <main className="auth-gate-page" role="status">
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+          <div style={{ width: "32px", height: "32px", border: "3px solid #e5e7eb", borderTopColor: "#16a34a", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <p style={{ color: "#6b7280", fontSize: "14px" }}>Verifying session…</p>
+        </div>
+      </main>
+    );
+  }
+
   if (isLoggedIn) {
+    if (user.role === "vendor" || user.role === "admin") {
+      const token = getToken();
+      const portalPath = user.role === "admin" ? "/admin" : "/vendor";
+      const target = adminVendorPortalUrl(
+        token ? `${portalPath}?auth_token=${encodeURIComponent(token)}` : portalPath
+      );
+      window.location.replace(target);
+      return null;
+    }
     return <Navigate to={postLoginPath(user.role, from)} replace />;
   }
 
@@ -131,7 +152,14 @@ function Login() {
             </button>
             <button
               type="button"
-              onClick={() => window.location.assign(adminVendorPortalUrl("/login?role=vendor"))}
+              className={role === "vendor" ? "active" : ""}
+              onClick={() => {
+                const token = getToken();
+                const target = adminVendorPortalUrl(
+                  token ? `/vendor?auth_token=${encodeURIComponent(token)}` : "/login?role=vendor"
+                );
+                window.location.assign(target);
+              }}
             >
               Vendor login
             </button>

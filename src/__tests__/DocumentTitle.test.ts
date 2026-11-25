@@ -15,5 +15,6 @@ describe("DocumentTitle pageTitle resolver tests", () => {
     expect(pageTitle("/categories", "")).toBe("Categories | Products | GoogleDoko");
     expect(pageTitle("/cart", "")).toBe("Cart | GoogleDoko");
     expect(pageTitle("/about", "")).toBe("About Us | GoogleDoko");
+    expect(pageTitle("/our-story", "")).toBe("Our Story | GoogleDoko");
   });
 });
